@@ -1,0 +1,26 @@
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["es6"],
+    "strict": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/@figma"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "tint/*": ["node_modules/tint/dist/*"],
+      "@src/*": ["src/*"],
+      "@code/*": ["src/code/*"],
+      "@ui/*": ["src/ui/*"],
+      "@tools/*": ["src/tools/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".vscode",
+    ".git"
+  ]
+}

@@ -1,0 +1,31 @@
+@use '~tint/styles/bootstrap' as bootstrap
+@use './colors'
+
+@include bootstrap.generate-color-variables(colors.$colors)
+
+@media (prefers-color-scheme: dark)
+  @include bootstrap.generate-color-variables(colors.$colors-dark)
+
+@include bootstrap.generate-font-faces("~tint/fonts")
+
+@include bootstrap.full-bootstrap()
+
+:root
+  color-scheme: light dark
+  --warning-bg: light-dark(#FFF9E2, #401700)
+  --warning-color: light-dark(#D57800, #F4C470)
+  --error-bg: light-dark(#FFEBE6, #500219)
+  --error-color: light-dark(#F35A77, #FFADAB)
+
+body, html
+  height: 100%
+
+body
+  display: flex
+  overflow: hidden
+  flex-direction: column
+  font-family: 'Inter', sans-serif
+
+*
+  scrollbar-width: thin
+  scrollbar-color: color-mix(in srgb, var(--tint-text) 25%, transparent) color-mix(in srgb, var(--tint-bg) 50%, transparent)

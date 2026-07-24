@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# macOS
+.DS_Store
+
+# Local, per-machine tool settings (personal, not shared)
+.claude/settings.local.json
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,45 @@
+$colors: (
+  plain: (
+    bg: #ffffff,
+    text: rgba(0, 0, 0, 0.9),
+    text-secondary: rgba(0, 0, 0, 0.5),
+    text-accent: #eb2a2f,
+    text-link: #0a76c3,
+    action-primary: #0d99ff,
+    action-primary-text: #fdfdfd,
+    action-primary-hover: #0482eb,
+    action-primary-active: #007be5,
+    action-secondary: rgba(0, 123, 229, 0.902),
+    action-secondary-text: rgba(0, 123, 229, 0.9),
+    action-secondary-hover: rgba(0, 123, 229, 0.1),
+    action-secondary-active: rgba(0, 123, 229, 0.2),
+    input-bg: #f5f5f5,
+  ),
+  general: (
+    card-border: rgba(0, 0, 0, 0.1),
+    card-shadow: '0 5px 40px #0000001a, inset 0 2px 0 -1px #ffffff80',
+  ),
+);
+
+$colors-dark: (
+  plain: (
+    bg: #2c2c2c,
+    text: #ffffff,
+    text-secondary: rgba(255, 255, 255, 0.7),
+    text-accent: #fa5e88,
+    text-link: #0c8ce9,
+    action-primary: #0c8ce9,
+    action-primary-text: #ffffff,
+    action-primary-hover: #0b75cb,
+    action-primary-active: #0a6dc2,
+    action-secondary: rgba(180, 224, 248, 0.9),
+    action-secondary-text: rgba(180, 224, 248, 1),
+    action-secondary-hover: rgba(180, 224, 248, 0.1),
+    action-secondary-active: rgba(180, 224, 248, 0.2),
+    input-bg: #383838,
+    card-border: rgba(255, 255, 255, 0.2),
+  ),
+  general: (
+    card-shadow: '0 5px 40px #00000070',
+  ),
+);

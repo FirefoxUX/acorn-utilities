@@ -1,0 +1,7 @@
+---
+description: Acorn Utilities architecture, core principles (shared vs tool-specific, check the tint design system), and how to add a tool.
+globs: "*"
+alwaysApply: true
+---
+
+Read and follow `AGENTS.md` in the repo root before doing any work in this repo.

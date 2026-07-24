@@ -1,0 +1,14 @@
+{
+  "name": "Acorn Utilities",
+  "id": "1662528313034008073",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "ui": "index.html",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}
