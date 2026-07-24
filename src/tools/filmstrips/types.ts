@@ -25,6 +25,13 @@ export type ColorRole = 'context-fill' | 'context-stroke' | 'literal'
 /** hex ("#rrggbb") -> role. A color missing from the map defaults to `context-fill`. */
 export type ColorMapping = Record<string, ColorRole>
 
+/**
+ * A pause persisted on the source frame (via plugin data). The id-bearing
+ * runtime shape is `PausePoint` in pause-schedule.ts; ids are UI-only and
+ * regenerated on load, so they are not stored.
+ */
+export type StoredPause = { atFrame: number; durationMs: number }
+
 /** Cheap, cloning-free summary of the current selection's Motion animation. */
 export type SelectionMotionInfo = {
   name: string
@@ -55,6 +62,8 @@ export type FilmstripResult = {
   durationMs: number
   /** The layer name the strip was generated or imported from. */
   sourceName: string
+  /** Pauses restored from the source frame (empty if none stored). */
+  pauses: StoredPause[]
   placedInFigma: boolean
 }
 

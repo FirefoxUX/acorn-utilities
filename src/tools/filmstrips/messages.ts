@@ -1,8 +1,16 @@
 // Message contract for the Generate Filmstrips tool. Keys are namespaced with
 // the `filmstrip:` prefix so they never collide with other tools' messages.
 
-import type { FunctionToMessage } from '@src/message-handler'
-import type { ColorMapping, FilmstripOptions, FilmstripResult } from './types'
+import type {
+  FunctionToMessage,
+  NotificationMessage,
+} from '@src/message-handler'
+import type {
+  ColorMapping,
+  FilmstripOptions,
+  FilmstripResult,
+  StoredPause,
+} from './types'
 
 export interface FilmstripsMessages {
   /** Bake the selected frame's Motion animation into a filmstrip. */
@@ -27,4 +35,9 @@ export interface FilmstripsMessages {
   >
   /** Return the tool to its idle state (clears the last result). */
   'filmstrip:reset': FunctionToMessage<() => { error?: string }>
+  /**
+   * Persist the current pause list onto the source frame (plugin data), so
+   * regenerating or re-importing that frame restores it. Fire-and-forget.
+   */
+  'filmstrip:save-pauses': NotificationMessage<{ pauses: StoredPause[] }>
 }

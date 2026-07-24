@@ -41,7 +41,7 @@ export const TOOLS = {
   filmstrips: {
     id: 'filmstrips',
     title: 'Generate Filmstrips',
-    description: 'Bake a Motion animation into a CSS filmstrip.',
+    description: 'Bake a Figma animation into a CSS filmstrip.',
     accent: '#046000',
   },
 } satisfies Record<ToolId, ToolMeta>

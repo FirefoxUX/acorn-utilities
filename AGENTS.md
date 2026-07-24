@@ -18,6 +18,10 @@ it here.
   before writing your own.
 - Challenge assumptions about how something could work, and gather sources before
   committing to a plan.
+- For non-trivial work, if your setup supports it (subagents, a review workflow, or a
+  code-review command), suggest an adversarial review of the plan before building — an
+  independent pass whose job is to find holes in it. Skip it for small or obvious
+  changes.
 
 ## Writing
 

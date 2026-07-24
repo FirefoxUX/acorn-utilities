@@ -17,6 +17,7 @@
   import IconTrash from 'tint/icons/20-trash.svg?raw'
   import AccentBar from '@ui/components/AccentBar.svelte'
   import Card from '@ui/components/Card.svelte'
+  import { messenger } from '@src/message-handler'
   import { errorStore } from '@ui/store/error'
   import { filmstripsState } from '@ui/tools/filmstrips/store'
   import { downloadSvg } from '@ui/tools/filmstrips/download'
@@ -66,6 +67,10 @@
 
   function formatSpeed(rate: number): string {
     return `${rate}×`
+  }
+
+  function formatDuration(ms: number): string {
+    return `${(ms / 1000).toFixed(2)}s`
   }
   const speedMenuItems = $derived(
     SPEED_OPTIONS.map((rate) => ({
@@ -144,7 +149,10 @@
   let progress = $state(0)
   let scrubbing = $state(false)
 
-  // Reset per-result authoring state when a fresh strip arrives.
+  // Reset per-result authoring state when a fresh strip arrives. Pauses are
+  // seeded from the result (restored off the source frame's plugin data) with
+  // fresh local ids. This assignment must not itself persist — only user edits
+  // do (see savePauses) — so there is no save echo on load.
   $effect(() => {
     const colors = result?.colors
     colorRoles = colors
@@ -152,7 +160,11 @@
           colors.map((hex) => [hex, 'context-fill' as ColorRole]),
         )
       : {}
-    pauses = []
+    pauses = (result?.pauses ?? []).map((p) => ({
+      id: `p${++pauseSeq}`,
+      atFrame: p.atFrame,
+      durationMs: p.durationMs,
+    }))
     editingPauseId = null
   })
 
@@ -408,8 +420,24 @@
     }
   }
   function onPillUp(e: PointerEvent) {
+    const wasDragging = pillDrag !== null
     pillDrag = null
     ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+    // Persist once at the end of a drag, not on every pointermove update.
+    if (wasDragging) savePauses()
+  }
+
+  // Persist the current pauses onto the source frame. Called only from discrete
+  // commit points (add / delete / field commit / drag end), never from the seed
+  // or per-pointermove drag updates. $state.snapshot strips the reactive proxy
+  // (postMessage can't clone it) and the map drops the UI-only id.
+  function savePauses() {
+    messenger.notify('filmstrip:save-pauses', {
+      pauses: $state.snapshot(pauses).map(({ atFrame, durationMs }) => ({
+        atFrame,
+        durationMs,
+      })),
+    })
   }
 
   function addPauseAtPlayhead() {
@@ -419,6 +447,7 @@
       (a, b) => a.atFrame - b.atFrame,
     )
     editingPauseId = id
+    savePauses()
   }
   function updatePause(
     id: string,
@@ -439,6 +468,7 @@
   function deletePause(id: string) {
     pauses = pauses.filter((p) => p.id !== id)
     if (editingPauseId === id) editingPauseId = null
+    savePauses()
   }
 
   function handleDownload(svg: string) {
@@ -671,15 +701,19 @@
               label="Frame"
               type="number"
               value={String(ep.atFrame)}
-              oncommit={(v: string) =>
-                updatePause(ep.id, { atFrame: parseInt(v) || 0 })}
+              oncommit={(v: string) => {
+                updatePause(ep.id, { atFrame: parseInt(v) || 0 })
+                savePauses()
+              }}
             />
             <TextField
               label="Pause (ms)"
               type="number"
               value={String(ep.durationMs)}
-              oncommit={(v: string) =>
-                updatePause(ep.id, { durationMs: parseInt(v) || 1 })}
+              oncommit={(v: string) => {
+                updatePause(ep.id, { durationMs: parseInt(v) || 1 })
+                savePauses()
+              }}
             />
           </div>
           <Button
@@ -694,6 +728,26 @@
         </div>
       </Card>
     {/if}
+
+    <Card>
+      <div class="stats tint--type-ui-small">
+        <span class="stat">
+          <span class="stat-label">Frames</span>{result.frameCount}
+        </span>
+        <span class="stat">
+          <span class="stat-label">
+            {pauses.length > 0 ? 'Without pauses' : 'Length'}
+          </span>{formatDuration(result.durationMs)}
+        </span>
+        {#if pauses.length > 0}
+          <span class="stat">
+            <span class="stat-label">With pauses</span>{formatDuration(
+              totalDurationMs,
+            )}
+          </span>
+        {/if}
+      </div>
+    </Card>
 
     <Card>
       <div class="download-card">
@@ -948,6 +1002,18 @@
   gap: tint.$size-8
   flex: 1
   min-width: 0
+
+.stats
+  display: flex
+  flex-wrap: wrap
+  gap: tint.$size-4 tint.$size-16
+
+.stat
+  display: inline-flex
+  gap: tint.$size-4
+
+.stat-label
+  color: var(--tint-text-secondary)
 
 .download-card
   display: flex

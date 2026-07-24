@@ -5,12 +5,13 @@
 // (see render-context.ts) without re-reading Figma geometry, and placing the
 // result on the canvas is a separate, later action (see place-in-figma.ts).
 
-import type { FilmstripOptions } from '@tools/filmstrips/types'
+import type { FilmstripOptions, StoredPause } from '@tools/filmstrips/types'
 import { FILMSTRIP_FPS, MAX_FILMSTRIP_FRAMES } from '@tools/filmstrips/types'
 import { collectAnimated, subtreeDurationSec } from './inspect'
 import { buildScene, type SceneModel } from './build-scene'
 import { collectColors } from './collect-colors'
 import { renderFilmstrip } from './render-filmstrip'
+import { readStoredPauses } from './pauses-meta'
 
 export interface FilmstripData {
   svg: string
@@ -22,6 +23,7 @@ export interface FilmstripData {
   frameCount: number
   durationMs: number
   sourceName: string
+  pauses: StoredPause[]
 }
 
 /** Enough to re-render the same strip with a different color mapping. */
@@ -82,6 +84,7 @@ export async function generateFilmstrip(
       frameCount,
       durationMs: Math.round(durationSec * 1000),
       sourceName: source.name,
+      pauses: readStoredPauses(source, frameCount),
     },
     cached: {
       scene,

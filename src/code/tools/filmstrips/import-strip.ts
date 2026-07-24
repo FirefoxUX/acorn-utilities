@@ -7,6 +7,7 @@
 
 import { FILMSTRIP_FPS } from '@tools/filmstrips/types'
 import type { FilmstripData } from './generate'
+import { readStoredPauses } from './pauses-meta'
 
 export async function importStrip(
   source: SceneNode,
@@ -30,5 +31,6 @@ export async function importStrip(
     frameCount,
     durationMs: Math.round((frameCount / FILMSTRIP_FPS) * 1000),
     sourceName: source.name,
+    pauses: readStoredPauses(source, frameCount),
   }
 }

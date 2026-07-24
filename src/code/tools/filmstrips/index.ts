@@ -9,6 +9,7 @@ import { importStrip } from './import-strip'
 import { placeFilmstripInFigma } from './place-in-figma'
 import { renderWithColorMapping } from './render-context'
 import { buildCss } from './css'
+import { PAUSES_KEY } from './pauses-meta'
 
 /**
  * Selected nodes whose subtree carries a Motion animation. Motion keyframes
@@ -35,6 +36,11 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
   // Null for imported strips (no separable colors) or once superseded.
   let cachedScene: CachedScene | null = null
 
+  // Id of the frame the current result was generated/imported from — the target
+  // for persisting pause edits. Its own lifetime (set on generate AND import,
+  // cleared on reset), independent of cachedScene which is null for imports.
+  let sourceNodeId: string | null = null
+
   messenger.on('filmstrip:reset', () => {
     const slice = s()
     slice.view = 'idle'
@@ -44,6 +50,7 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
     slice.currentFrame = 0
     slice.totalFrames = 0
     cachedScene = null
+    sourceNodeId = null
     refresh(figma.currentPage.selection)
     return {}
   })
@@ -76,6 +83,7 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
         },
       )
       cachedScene = cached
+      sourceNodeId = animated[0].id
 
       const css = buildCss({
         cellW: data.cellW,
@@ -110,6 +118,7 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
     try {
       const data = await importStrip(selection[0], frameCount)
       cachedScene = null
+      sourceNodeId = selection[0].id
       const css = buildCss({
         cellW: data.cellW,
         cellH: data.cellH,
@@ -157,6 +166,23 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
       return { placed: true }
     } catch (error) {
       return handleError(error, 'filmstrip:place-in-figma')
+    }
+  })
+
+  // Persist pause edits onto the source frame. Fire-and-forget: the UI sends the
+  // current list on each discrete edit. Async node lookup is required under
+  // `documentAccess: "dynamic-page"` (sync getNodeById throws there).
+  messenger.on('filmstrip:save-pauses', async ({ pauses }) => {
+    if (!sourceNodeId) return
+    const next = pauses.length ? JSON.stringify(pauses) : ''
+    try {
+      const node = await figma.getNodeByIdAsync(sourceNodeId)
+      if (!node || node.removed || !('setPluginData' in node)) return
+      // Skip a no-op write so unchanged saves don't churn the undo stack.
+      if (node.getPluginData(PAUSES_KEY) === next) return
+      node.setPluginData(PAUSES_KEY, next)
+    } catch {
+      // Best-effort: the node may be gone or on an unloaded page.
     }
   })
 
