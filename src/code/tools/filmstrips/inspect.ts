@@ -1,6 +1,6 @@
 // Cheap, cloning-free inspection of a node's Motion animation. Figma Motion
 // keyframes live on the animated layers themselves (often nested descendants),
-// while the timeline/duration is associated with the whole subtree — so we
+// while the timeline/duration is associated with the whole subtree. so we
 // recurse to detect animation and aggregate caveats.
 
 import {
@@ -33,6 +33,22 @@ export function collectAnimated(node: SceneNode): SceneNode[] {
     )
   }
   return list
+}
+
+// Angular and diamond gradients have no SVG paint-server equivalent, so the
+// renderer skips them (readPaint returns null) and those shapes come out blank.
+// Flag it on the idle view rather than letting it surprise the user.
+function hasUnsupportedGradient(node: SceneNode): boolean {
+  const n = node as unknown as { fills?: unknown; strokes?: unknown }
+  const paints = [
+    ...(Array.isArray(n.fills) ? n.fills : []),
+    ...(Array.isArray(n.strokes) ? n.strokes : []),
+  ] as { type?: string; visible?: boolean }[]
+  return paints.some(
+    (p) =>
+      (p.type === 'GRADIENT_ANGULAR' || p.type === 'GRADIENT_DIAMOND') &&
+      p.visible !== false,
+  )
 }
 
 /** Total animation duration in seconds (timeline first, else longest binding). */
@@ -84,6 +100,16 @@ export function inspectNode(node: SceneNode): SelectionMotionInfo {
     const anims = getAnimations(n)
     if (!anims) continue
     for (const note of readTracks(anims).unsupportedNotes) notes.add(note)
+  }
+
+  const subtree =
+    'findAll' in node
+      ? [node, ...(node as SceneNode & ChildrenMixin).findAll(() => true)]
+      : [node]
+  if (subtree.some(hasUnsupportedGradient)) {
+    notes.add(
+      'Angular and diamond gradients render blank — they have no SVG equivalent yet.',
+    )
   }
 
   const nested = animated.some((n) => n !== node)

@@ -1,5 +1,5 @@
 // Pure easing evaluation for Motion → filmstrip baking. Maps Figma's MotionEasing
-// to an eased progress in [0,1] (may overshoot for BACK/spring — intentionally
+// to an eased progress in [0,1] (may overshoot for BACK/spring. intentionally
 // NOT clamped so overshoot is preserved). No `figma` dependencies.
 
 import type {
@@ -11,7 +11,7 @@ import type {
 type BezierPoints = readonly [number, number, number, number]
 
 // Cubic-bezier presets. Named Figma presets (GENTLE/QUICK/SLOW) are
-// approximations — their exact curves are unpublished.
+// approximations. their exact curves are unpublished.
 const BEZIER_PRESETS: Partial<Record<MotionEasingType, BezierPoints>> = {
   EASE_IN: [0.42, 0, 1, 1],
   EASE_OUT: [0, 0, 0.58, 1],
@@ -72,7 +72,7 @@ function cubicBezier(p: BezierPoints): (x: number) => number {
 
 // Normalized damped-spring unit-step response over t in [0,1]. `bounce` in
 // [0,1]: 0 = critically damped (no overshoot), 1 = very bouncy. Approximation
-// of Figma's spring settling (duration-independent) — flagged to the user.
+// of Figma's spring settling (duration-independent). flagged to the user.
 function springProgress(bounce: number, t: number): number {
   if (t <= 0) return 0
   if (t >= 1) return 1

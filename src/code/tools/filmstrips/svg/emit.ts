@@ -63,6 +63,71 @@ export function groupEl(
   return `<g ${attrs.join(' ')}>${children}</g>`
 }
 
+/**
+ * Wrap masked content in a `<g>` carrying a clip-path or mask reference. Unlike
+ * `groupEl`, this always emits the element: the reference is the whole point, so
+ * it must never be omitted (a bare identity `<g>` still applies the clip). The
+ * wrapper is transform-free — the clip/mask geometry and the masked content are
+ * both baked in the same frame space (see render-frame).
+ */
+export function maskWrapperEl(refAttr: string, children: string): string {
+  return `<g ${refAttr}>${children}</g>`
+}
+
+/** A `<stop>`; omits `stop-opacity` when fully opaque. */
+export function stopEl(offset: number, color: string, opacity: number): string {
+  const op = opacity < 1 ? ` stop-opacity="${round(opacity)}"` : ''
+  return `<stop offset="${round(offset)}" stop-color="${color}"${op}/>`
+}
+
+/** A `<linearGradient>` in user space (coordinates match the path `d`). */
+export function linearGradientEl(
+  id: string,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  stops: string,
+): string {
+  return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${round(x1)}" y1="${round(y1)}" x2="${round(x2)}" y2="${round(y2)}">${stops}</linearGradient>`
+}
+
+/**
+ * A `<radialGradient>` as a unit circle transformed into the local ellipse.
+ * `matrix` maps (origin, r=1) to the ellipse; skew/rotation ride in it because
+ * SVG's scalar `r` can't express a non-uniform ellipse.
+ */
+export function radialGradientEl(
+  id: string,
+  matrix: string,
+  stops: string,
+): string {
+  return `<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1" gradientTransform="${matrix}">${stops}</radialGradient>`
+}
+
+/**
+ * A `<clipPath>`. Children must be bare shapes — `<g>` is invalid inside — so
+ * mask geometry is emitted as `<path transform="matrix(world)" d="…"/>` with no
+ * paint (only the outline matters).
+ */
+export function clipPathEl(id: string, paths: string): string {
+  return `<clipPath id="${id}">${paths}</clipPath>`
+}
+
+/**
+ * An alpha `<mask>` over the full cell. The region is the whole cell rather than
+ * the mask's tight bounding box so a mask that scales up under animation is
+ * never clipped by its own resting bounds.
+ */
+export function maskEl(
+  id: string,
+  w: number,
+  h: number,
+  content: string,
+): string {
+  return `<mask id="${id}" mask-type="alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="${round(w)}" height="${round(h)}">${content}</mask>`
+}
+
 /** A nested `<svg>` viewport that positions and clips one filmstrip cell. */
 export function nestedSvg(
   x: number,

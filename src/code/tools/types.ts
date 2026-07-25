@@ -9,7 +9,7 @@ import type { AppState } from '@src/types'
 /** Dependencies injected into every tool's `register()`. */
 export interface ToolContext {
   messenger: FigmaMessageHandler
-  /** The observable app state — mutate a tool's slice to broadcast to the UI. */
+  /** The observable app state. mutate a tool's slice to broadcast to the UI. */
   state: AppState
   /** Normalize a thrown error into a `{ error }` response and log it. */
   handleError: (error: unknown, operation: string) => { error: string }

@@ -36,9 +36,11 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
   // Null for imported strips (no separable colors) or once superseded.
   let cachedScene: CachedScene | null = null
 
-  // Id of the frame the current result was generated/imported from — the target
-  // for persisting pause edits. Its own lifetime (set on generate AND import,
-  // cleared on reset), independent of cachedScene which is null for imports.
+  // Id of the frame the current result was generated/imported from. the target
+  // for persisting pause edits. Stored as an id (not a live reference): a held
+  // node reference goes stale under `documentAccess: "dynamic-page"` and reports
+  // `removed === true`, so the save handler re-fetches it fresh via
+  // getNodeByIdAsync. Set on generate AND import, cleared on reset.
   let sourceNodeId: string | null = null
 
   messenger.on('filmstrip:reset', () => {
@@ -170,17 +172,20 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
   })
 
   // Persist pause edits onto the source frame. Fire-and-forget: the UI sends the
-  // current list on each discrete edit. Async node lookup is required under
-  // `documentAccess: "dynamic-page"` (sync getNodeById throws there).
+  // current list on each discrete edit; we re-fetch the node fresh by id and
+  // write its plugin data.
   messenger.on('filmstrip:save-pauses', async ({ pauses }) => {
     if (!sourceNodeId) return
     const next = pauses.length ? JSON.stringify(pauses) : ''
     try {
+      // Re-fetch fresh: a reference held since generate reports removed=true
+      // under dynamic-page document access.
       const node = await figma.getNodeByIdAsync(sourceNodeId)
-      if (!node || node.removed || !('setPluginData' in node)) return
+      if (!node || node.removed) return
       // Skip a no-op write so unchanged saves don't churn the undo stack.
-      if (node.getPluginData(PAUSES_KEY) === next) return
-      node.setPluginData(PAUSES_KEY, next)
+      if (node.getPluginData(PAUSES_KEY) !== next) {
+        node.setPluginData(PAUSES_KEY, next)
+      }
     } catch {
       // Best-effort: the node may be gone or on an unloaded page.
     }
@@ -192,7 +197,7 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
     },
     onSelectionChange(selection) {
       // Only the idle/ready screen tracks the live canvas selection. Once a
-      // strip is generated (done) — or while processing / after an error —
+      // strip is generated (done). or while processing / after an error —
       // the view is sticky: selecting, deselecting, or reselecting frames on
       // the canvas must not discard the result or bounce out of it (the user
       // is likely editing pauses or reading the result). They return to the

@@ -1,7 +1,7 @@
 // Bundle-neutral tool registry: the single source of truth for which tools
 // exist and their shared, presentation-agnostic metadata. Imported by BOTH the
 // plugin (code) and UI bundles, so this file must never import `figma`, any
-// `.svelte` component, or any browser/DOM API — it compiles into both bundles
+// `.svelte` component, or any browser/DOM API. it compiles into both bundles
 // and the Figma sandbox has no DOM. Keep every field a plain primitive (that is
 // why `accent` is a raw hex string, not a token or CSS object). Backend
 // `register()` fns live in the code registry (`@code/tools/registry`) and Svelte
@@ -29,7 +29,7 @@ export interface ToolMeta {
 export const TOOL_ORDER: ToolId[] = ['icon-prep', 'filmstrips']
 
 // `satisfies` (not a `: Record<…>` annotation) so the compiler still demands an
-// entry per `ToolId` — the missing-tool checklist — while keeping each value's
+// entry per `ToolId`. the missing-tool checklist. while keeping each value's
 // literal type for callers.
 export const TOOLS = {
   'icon-prep': {

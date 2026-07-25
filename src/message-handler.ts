@@ -208,7 +208,7 @@ export class FigmaMessageHandler {
 
   /**
    * Fire-and-forget message. Use for one-way updates where no response is
-   * expected — unlike `request`, it registers no pending entry, so there is
+   * expected. unlike `request`, it registers no pending entry, so there is
    * nothing to leak or time out.
    */
   notify<T extends MessageType>(type: T, data: MessageTypes[T]['data']): void {
@@ -269,7 +269,7 @@ export class FigmaMessageHandler {
     this.messageListeners.delete(type)
   }
 
-  /** Which side this instance runs on — handy for code shared by both bundles. */
+  /** Which side this instance runs on. handy for code shared by both bundles. */
   getContext(): 'ui' | 'plugin' {
     return this.isUI ? 'ui' : 'plugin'
   }

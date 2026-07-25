@@ -1,5 +1,5 @@
 // Download a string as a file from inside the Figma plugin iframe. Uses a blob
-// object URL + a programmatic anchor click — works under manifest
+// object URL + a programmatic anchor click. works under manifest
 // networkAccess:none (no network request, no host file API needed).
 
 export function downloadText(

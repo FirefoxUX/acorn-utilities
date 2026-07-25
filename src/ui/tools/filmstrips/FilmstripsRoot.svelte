@@ -41,7 +41,7 @@
   }
 
   // From a result (done/error), back returns to the selection screen instead
-  // of exiting the tool — only leave for the menu when already there.
+  // of exiting the tool. only leave for the menu when already there.
   function handleBack() {
     if (view === 'done' || view === 'error') {
       errorStore.safeRequest('filmstrip:reset')

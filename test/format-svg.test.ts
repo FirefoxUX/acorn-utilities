@@ -44,7 +44,7 @@ describe('formatSvg', () => {
     )
   })
 
-  it('is cosmetic — stripping the added whitespace restores the original', () => {
+  it('is cosmetic. stripping the added whitespace restores the original', () => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="20"><svg x="20" y="0" width="20" height="20"><g opacity="0.5"><path d="M2 2" fill="#b3fe00"/></g></svg></svg>'
     expect(formatSvg(svg).replace(/\n\s*/g, '')).toBe(svg)

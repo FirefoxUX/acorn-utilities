@@ -165,7 +165,7 @@ const duotoneSteps: PipelineStep[] = [
 
       if (stray.length > 0) {
         throw new Error(
-          `Duotone frame has unexpected top-level shape "${stray[0]}" — duotone frames may only contain the "${DUOTONE_FILL_NAME}" and "${DUOTONE_STROKE_NAME}" groups.`,
+          `Duotone frame has unexpected top-level shape "${stray[0]}". duotone frames may only contain the "${DUOTONE_FILL_NAME}" and "${DUOTONE_STROKE_NAME}" groups.`,
         )
       }
       if (!fillGroup) {
@@ -309,7 +309,7 @@ function pipelineFor(frameName: string): {
 
 /**
  * Run the pipeline on a single already-cloned frame.
- * Catches any step error and returns it as a structured result — never throws.
+ * Catches any step error and returns it as a structured result. never throws.
  */
 function processFrame(
   clonedFrame: FrameNode,

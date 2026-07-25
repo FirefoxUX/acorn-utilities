@@ -4,7 +4,7 @@
 // tested in isolation like the other pure engine modules (svg/trim.ts, etc.).
 //
 // A pause holds the frame already showing once playback reaches `atFrame`,
-// then playback resumes toward the next frame — matching Firefox's own model
+// then playback resumes toward the next frame. matching Firefox's own model
 // (see indicator.css: a pause at frame 18 holds frame 18, then resumes to 26).
 
 /** One user-configured pause. `atFrame` is a real frame index in [0, frameCount-1]. */
@@ -27,7 +27,7 @@ export type Segment =
       toFrame: number
       startPct: number
       endPct: number
-      /** Frame advance count (toFrame - fromFrame). Export-comment only — this
+      /** Frame advance count (toFrame - fromFrame). Export-comment only. this
        * is the `steps(N)` count mirrored into the Firefox comment. The preview
        * builder does NOT read it (it emits one keyframe per frame instead). */
       steps: number

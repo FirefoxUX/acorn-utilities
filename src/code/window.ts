@@ -1,7 +1,7 @@
 // Drag-resize support: the UI's ResizeHandle sends live width/height as the
 // user drags, this clamps them to the shared bounds, applies the resize, and
 // persists the result (debounced) so it's restored on the next launch. Ported
-// from acorn-annotations, minus its sidebar-width carve-out — this plugin has
+// from acorn-annotations, minus its sidebar-width carve-out. this plugin has
 // no equivalent sidebar/support view, so the same bounds apply unconditionally.
 
 import {

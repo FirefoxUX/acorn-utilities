@@ -16,7 +16,7 @@
     | undefined = $state(undefined)
 
   // Tool router: the active tool is looked up by its `ToolId` in the exhaustive
-  // registries — its root from `TOOL_COMPONENTS`, its accent from `TOOLS` — and
+  // registries. its root from `TOOL_COMPONENTS`, its accent from `TOOLS`. and
   // themed here so a tool never wires its own color. Adding a tool means adding a
   // registry entry, not touching this file. `null` means the main menu.
   const activeTool = $derived($appState.activeTool)

@@ -6,7 +6,13 @@
 import { getAnimations } from './motion-types'
 import { readTracks, type NodeTracks } from './interpolate'
 import { parsePath, type Subpath } from './svg/path-data'
-import { fromFigmaTransform, identity, type Affine } from './svg/matrix'
+import {
+  fromFigmaTransform,
+  identity,
+  invert,
+  multiply,
+  type Affine,
+} from './svg/matrix'
 import type { StrokeCap, StrokeJoin } from './svg/outline'
 
 /** A resolved solid color (channels 0..1). */
@@ -17,6 +23,31 @@ export interface SolidColor {
   a: number
 }
 
+/** One gradient stop; `color.a` carries the stop's alpha (see readPaint). */
+export interface GradientStop {
+  position: number
+  color: SolidColor
+}
+
+/** A linear or radial gradient paint, resolved to a local-space transform. */
+export interface GradientPaint {
+  kind: 'gradient'
+  gradientType: 'linear' | 'radial'
+  stops: GradientStop[]
+  /** Figma's gradientTransform, as an Affine (normalized space -> gradient space). */
+  transform: Affine
+  opacity: number
+}
+
+/** A resolved solid paint. */
+export interface SolidPaint {
+  kind: 'solid'
+  color: SolidColor
+}
+
+/** A leaf fill or stroke the engine can render. Unsupported paints are null. */
+export type Paint = SolidPaint | GradientPaint
+
 export interface LeafGeometry {
   /** Filled area outline, from `fillGeometry`. */
   fillSubpaths: Subpath[]
@@ -25,9 +56,9 @@ export interface LeafGeometry {
 }
 
 export interface LeafStyle {
-  /** Aligned to the node's fills; non-solid or hidden paints are null. */
-  fills: (SolidColor | null)[]
-  strokes: (SolidColor | null)[]
+  /** Aligned to the node's fills; unsupported (angular/diamond) or hidden paints are null. */
+  fills: (Paint | null)[]
+  strokes: (Paint | null)[]
   strokeWidth: number
   strokeCap: StrokeCap
   strokeJoin: StrokeJoin
@@ -43,6 +74,8 @@ export interface SceneNodeModel {
   height: number
   baseOpacity: number
   visible: boolean
+  /** True when this node masks its following siblings (Figma `isMask`). */
+  isMask: boolean
   children: SceneNodeModel[]
   geometry?: LeafGeometry
   style?: LeafStyle
@@ -65,36 +98,66 @@ const CONTAINER_TYPES = new Set([
   'SECTION',
 ])
 
+// Minimal structural shape of a raw Figma paint we read. Kept local so the
+// engine's resolved Paint types (above) don't collide with the global Figma
+// Paint union. `color.a` on a gradient stop is undocumented in the typings
+// (ColorStop.color is RGB) but present at runtime — it carries the stop's alpha.
+interface RawStop {
+  position: number
+  color: RGB & { a?: number }
+}
+interface RawPaint {
+  type: string
+  visible?: boolean
+  opacity?: number
+  color?: RGB
+  gradientStops?: ReadonlyArray<RawStop>
+  gradientTransform?: Transform
+}
+
 // Minimal shape of the geometry/style members we read, to avoid casting to the
 // full node union for each optional property.
 interface GeomNode {
   vectorPaths?: ReadonlyArray<{ windingRule: string; data: string }>
   fillGeometry?: ReadonlyArray<{ windingRule: string; data: string }>
-  fills?: ReadonlyArray<Paint> | symbol
-  strokes?: ReadonlyArray<Paint>
+  fills?: ReadonlyArray<RawPaint> | symbol
+  strokes?: ReadonlyArray<RawPaint>
   strokeWeight?: number | symbol
   strokeCap?: string | symbol
   strokeJoin?: string | symbol
   strokeMiterLimit?: number
 }
 
-function readColor(paint: Paint): SolidColor | null {
-  if (paint.type === 'SOLID' && paint.visible !== false) {
+function readPaint(paint: RawPaint): Paint | null {
+  if (paint.visible === false) return null
+  if (paint.type === 'SOLID' && paint.color) {
     return {
-      r: paint.color.r,
-      g: paint.color.g,
-      b: paint.color.b,
-      a: paint.opacity ?? 1,
+      kind: 'solid',
+      color: { ...paint.color, a: paint.opacity ?? 1 },
     }
   }
+  if (paint.type === 'GRADIENT_LINEAR' || paint.type === 'GRADIENT_RADIAL') {
+    if (!paint.gradientStops || !paint.gradientTransform) return null
+    return {
+      kind: 'gradient',
+      gradientType: paint.type === 'GRADIENT_LINEAR' ? 'linear' : 'radial',
+      stops: paint.gradientStops.map((s) => ({
+        position: s.position,
+        color: { r: s.color.r, g: s.color.g, b: s.color.b, a: s.color.a ?? 1 },
+      })),
+      transform: fromFigmaTransform(paint.gradientTransform),
+      opacity: paint.opacity ?? 1,
+    }
+  }
+  // Angular/diamond gradients and image/video paints aren't supported yet.
   return null
 }
 
 function readPaints(
-  paints: ReadonlyArray<Paint> | symbol | undefined,
-): (SolidColor | null)[] {
+  paints: ReadonlyArray<RawPaint> | symbol | undefined,
+): (Paint | null)[] {
   if (!paints || !Array.isArray(paints)) return []
-  return paints.map(readColor)
+  return paints.map(readPaint)
 }
 
 function parseGeometry(
@@ -149,7 +212,19 @@ function buildLeaf(node: SceneNode & GeomNode): {
   }
 }
 
-function buildNode(node: SceneNode, isRoot: boolean): SceneNodeModel {
+// A node's resting transform relative to its parent, derived from absolute
+// (page-space) transforms rather than `relativeTransform`. Figma reports a GROUP
+// child's `relativeTransform` relative to the group's parent frame — not the
+// group — so chaining group×child would double the group's offset. Deriving from
+// absolutes (inverse(parentAbs) × nodeAbs) telescopes correctly for both frames
+// and groups. Falls back to `relativeTransform` if the parent is non-invertible.
+function restingRelativeToParent(node: SceneNode, parentAbs: Affine): Affine {
+  const inv = invert(parentAbs)
+  if (!inv) return fromFigmaTransform(node.relativeTransform)
+  return multiply(inv, fromFigmaTransform(node.absoluteTransform))
+}
+
+function buildNode(node: SceneNode, parentAbs: Affine | null): SceneNodeModel {
   const anims = getAnimations(node)
   const tracks = anims ? readTracks(anims) : undefined
   const hasTrim = !!(tracks?.numeric.trimStart || tracks?.numeric.trimEnd)
@@ -157,17 +232,21 @@ function buildNode(node: SceneNode, isRoot: boolean): SceneNodeModel {
   const base: SceneNodeModel = {
     type: node.type,
     isLeaf: false,
-    restingMatrix: isRoot
-      ? identity()
-      : fromFigmaTransform(node.relativeTransform),
+    // The root is normalized to identity; descendants are placed relative to it.
+    restingMatrix: parentAbs
+      ? restingRelativeToParent(node, parentAbs)
+      : identity(),
     width: node.width,
     height: node.height,
     baseOpacity: 'opacity' in node ? node.opacity : 1,
     visible: node.visible !== false,
+    isMask: 'isMask' in node && node.isMask === true,
     children: [],
     tracks,
     hasTrim,
   }
+
+  const nodeAbs = fromFigmaTransform(node.absoluteTransform)
 
   const isContainer =
     CONTAINER_TYPES.has(node.type) &&
@@ -176,7 +255,7 @@ function buildNode(node: SceneNode, isRoot: boolean): SceneNodeModel {
 
   if (isContainer) {
     base.children = (node as SceneNode & ChildrenMixin).children.map((c) =>
-      buildNode(c, false),
+      buildNode(c, nodeAbs),
     )
     return base
   }
@@ -195,7 +274,7 @@ function buildNode(node: SceneNode, isRoot: boolean): SceneNodeModel {
 /** Read the source subtree into a static SceneModel with the root normalized. */
 export function buildScene(source: SceneNode): SceneModel {
   return {
-    root: buildNode(source, true),
+    root: buildNode(source, null),
     width: source.width,
     height: source.height,
   }

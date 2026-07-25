@@ -61,6 +61,24 @@ export function fromFigmaTransform(t: Transform): Affine {
   }
 }
 
+/**
+ * Invert an affine, or null if it's degenerate (|det| ~ 0). Gradient math
+ * inverts a paint's transform; a collapsed shape mid-animation can produce a
+ * singular one, and returning null lets the caller skip emitting NaN coords.
+ */
+export function invert(m: Affine): Affine | null {
+  const det = m.a * m.d - m.b * m.c
+  if (Math.abs(det) < 1e-12) return null
+  return {
+    a: m.d / det,
+    b: -m.b / det,
+    c: -m.c / det,
+    d: m.a / det,
+    e: (m.c * m.f - m.d * m.e) / det,
+    f: (m.b * m.e - m.a * m.f) / det,
+  }
+}
+
 /** Apply an affine to a point. */
 export function applyToPoint(
   m: Affine,
@@ -78,9 +96,11 @@ export function toSvgMatrix(m: Affine, precision = 4): string {
 }
 
 /**
- * Layer a pose's animated transform onto a resting matrix, rotating and scaling
- * about the node's own center. `w`/`h` are the node's dimensions. Translation is
- * added in the node's local space, so the result keeps the resting placement.
+ * Layer a pose's animated transform onto a resting matrix. `w`/`h` are the
+ * node's dimensions. Motion X/Y translation moves the node along its PARENT's
+ * axes, so it wraps the resting placement (outermost); scale and rotation pivot
+ * about the node's own center within that placement (innermost). Applying the
+ * translation inside the resting matrix would twist it by any resting rotation.
  */
 export function composePose(
   baseline: Affine,
@@ -95,12 +115,12 @@ export function composePose(
   const sx = pose.scaleX ?? 1
   const sy = pose.scaleY ?? 1
   const rad = ((pose.rotation ?? 0) * Math.PI) / 180
-  const local = compose(
+  return compose(
     translate(tx, ty),
+    baseline,
     translate(cx, cy),
     rotate(rad),
     scale(sx, sy),
     translate(-cx, -cy),
   )
-  return multiply(baseline, local)
 }

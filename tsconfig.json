@@ -1,26 +1,28 @@
 {
   "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
-    "target": "es6",
-    "lib": ["es6"],
-    "strict": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/@figma"
-    ],
-    "baseUrl": ".",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "typeRoots": ["./node_modules/@types", "./node_modules/@figma"],
     "paths": {
-      "tint/*": ["node_modules/tint/dist/*"],
-      "@src/*": ["src/*"],
-      "@code/*": ["src/code/*"],
-      "@ui/*": ["src/ui/*"],
-      "@tools/*": ["src/tools/*"]
+      "tint/*": ["./node_modules/tint/dist/*"],
+      "@src/*": ["./src/*"],
+      "@code/*": ["./src/code/*"],
+      "@ui/*": ["./src/ui/*"],
+      "@tools/*": ["./src/tools/*"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".vscode",
-    ".git"
-  ]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.svelte",
+    "test/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

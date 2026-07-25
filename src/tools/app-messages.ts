@@ -14,7 +14,7 @@ export interface AppMessages {
   /** Hydrate the UI store with the current plugin state on mount. */
   'app:get-state': FunctionToMessage<() => AppState>
   /**
-   * Open a tool (or `null` for the menu). A one-way notification — navigation
+   * Open a tool (or `null` for the menu). A one-way notification. navigation
    * needs no response, and the resulting `app:state-change` broadcast is what
    * the UI reacts to.
    */

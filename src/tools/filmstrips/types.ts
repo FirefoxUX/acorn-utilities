@@ -1,7 +1,7 @@
 // State + contracts for the Generate Filmstrips tool. Bundle-neutral: no figma
 // or Svelte imports (shared by both the plugin and UI bundles).
 
-/** Fixed sampling rate for baking — no longer user-configurable. */
+/** Fixed sampling rate for baking. no longer user-configurable. */
 export const FILMSTRIP_FPS = 60
 
 /** Guardrail against runaway atlases (huge N → giant SVG). */
@@ -16,7 +16,7 @@ export type FilmstripOptions = {
 /**
  * How a literal color should paint in the Firefox export. Firefox icons treat
  * `context-fill` as the default/primary color and `context-stroke` as a
- * secondary color used only when an icon needs two tones — not a literal
+ * secondary color used only when an icon needs two tones. not a literal
  * mapping of SVG fills to `context-fill` and strokes to `context-stroke`.
  * `literal` keeps that color hardcoded (e.g. a color that must never re-tint).
  */

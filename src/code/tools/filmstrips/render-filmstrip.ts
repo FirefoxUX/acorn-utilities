@@ -25,8 +25,9 @@ export function renderFilmstrip(
   const cells: string[] = []
   for (let i = 0; i < frameCount; i++) {
     const t = (i / frameCount) * durationSec
-    const inner = renderFrame(scene, t, options)
-    cells.push(nestedSvg(i * cellW, 0, cellW, cellH, inner))
+    const { markup, defs } = renderFrame(scene, t, i, options)
+    const body = defs.length ? `<defs>${defs.join('')}</defs>${markup}` : markup
+    cells.push(nestedSvg(i * cellW, 0, cellW, cellH, body))
     onProgress?.(i + 1, frameCount)
   }
   return svgRoot(cellW * frameCount, cellH, cells.join(''))

@@ -1,5 +1,5 @@
 // Shrinks a filmstrip SVG for download by interning duplicated <path> elements
-// into <defs> and referencing them with <use> — the same structure Firefox's
+// into <defs> and referencing them with <use>. the same structure Firefox's
 // own icon strips use. The engine re-serializes every leaf's full path data for
 // each frame, so static leaves and settled-identical frames repeat the same
 // markup many times; hoisting each duplicate to one def and replacing every
@@ -36,6 +36,11 @@ export function optimizeSvg(svg: string): string {
   for (const path of order) {
     const count = counts.get(path) ?? 0
     if (count < 2) continue
+    // Never intern a transformed <path> — those are the geometry inside a
+    // <clipPath> (drawn leaves carry their transform on the enclosing <g>, not
+    // the path). Hoisting one to the root defs would leave a <use> inside a
+    // <clipPath> pointing across defs, whose rendering we don't want to bet on.
+    if (path.includes('transform=')) continue
     const id = `p${idx.toString(36)}`
     const def = path.replace(/^<path /, `<path id="${id}" `)
     const use = `<use href="#${id}"/>`

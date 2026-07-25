@@ -3,7 +3,7 @@
 // animation. The keyframe schedule follows indicator.css's step model (one
 // real frame is one `steps()` step; a pause adds `round(pauseMs / frameStepMs)`
 // steps; percentages are cumulative steps over the total). Every value is
-// hardcoded — no CSS custom properties — because an SVG/XML comment can't
+// hardcoded. no CSS custom properties. because an SVG/XML comment can't
 // contain a double hyphen, which `--custom-props` would introduce.
 
 import { buildSchedule, type PausePoint } from './pause-schedule'

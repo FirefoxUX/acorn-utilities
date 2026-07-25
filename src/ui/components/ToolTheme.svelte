@@ -13,7 +13,7 @@
   // Primary buttons are solid fills, so hover/active have to shift the fill
   // itself. Derive them by dropping HSL lightness a fixed amount (see `darken`)
   // rather than a CSS `color-mix` toward black, which scales channels
-  // proportionally and barely moves a dark accent like #5B1031 — leaving
+  // proportionally and barely moves a dark accent like #5B1031. leaving
   // hover/active looking identical to the base.
   const primaryHover = $derived(darken(accent, 6))
   const primaryActive = $derived(darken(accent, 11))

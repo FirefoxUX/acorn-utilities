@@ -4,7 +4,7 @@
     description: string
     /** Raw SVG markup for the tile icon. */
     icon: string
-    /** Tool accent color (hex) — colors the icon and focus/hover so the menu
+    /** Tool accent color (hex). colors the icon and focus/hover so the menu
         previews the same color the tool uses once opened. */
     accent: string
     onclick: () => void

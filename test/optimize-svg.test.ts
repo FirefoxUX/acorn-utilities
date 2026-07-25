@@ -96,6 +96,39 @@ describe('optimizeSvg', () => {
     ).toBe(2)
   })
 
+  it('leaves per-cell gradient/mask defs and clip paths intact', () => {
+    // A cell carrying its own <defs> (a gradient + a clipPath whose geometry is a
+    // transformed <path>) plus a repeated drawn ring. The optimizer must intern
+    // the ring but never touch the clip path (it carries a transform) or the
+    // gradient/mask defs, and never produce a <use> inside the <clipPath>.
+    const clip =
+      '<path transform="matrix(1 0 0 1 5 0)" d="M0 0C1 1 2 2 3 3Z"/>'
+    const grad =
+      '<linearGradient id="f0_0" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="10" y2="0"><stop offset="0" stop-color="#fff"/></linearGradient>'
+    const cellWithDefs = (x: number, tx: number): string =>
+      `<svg x="${x}" y="0" width="20" height="20" viewBox="0 0 20 20">` +
+      `<defs>${grad.replace('f0_0', `f${x}_0`)}<clipPath id="c${x}">${clip}</clipPath></defs>` +
+      `<g transform="matrix(1 0 0 1 ${tx} 1)">${ring}</g>` +
+      `<g clip-path="url(#c${x})"><g transform="matrix(1 0 0 1 4 5)"><path d="M1 1C2 2 3 3 4 4" fill="url(#f${x}_0)"/></g></g>` +
+      `</svg>`
+    const masked =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20">' +
+      cellWithDefs(0, 1) +
+      cellWithDefs(20, 2) +
+      '</svg>'
+    const optimized = optimizeSvg(masked)
+    // The drawn ring interned; the clip path did not (still inline, twice).
+    expect((optimized.match(/<use href="#p0"\/>/g) ?? []).length).toBe(2)
+    expect(
+      (optimized.match(/transform="translate\(5 0\)" d="M0 0/g) ?? []).length,
+    ).toBe(2)
+    // No <use> ever appears inside a <clipPath>.
+    expect(optimized).not.toMatch(/<clipPath[^>]*><use/)
+    // Gradient refs and defs survive untouched.
+    expect(optimized).toContain('fill="url(#f0_0)"')
+    expect(optimized).toContain('<linearGradient id="f0_0"')
+  })
+
   it('shortens pure-translate matrices and strips redundant leading zeros', () => {
     const optimized = optimizeSvg(atlas)
     expect(optimized).toContain('transform="translate(4 5)"')

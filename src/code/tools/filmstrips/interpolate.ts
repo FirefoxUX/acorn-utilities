@@ -124,7 +124,7 @@ export function readTracks(anims: Animations): NodeTracks {
 
   let hasSpring = false
   const markNonSet = () =>
-    notes.add('Some keyframes use offset/scale tracks — baked as absolute.')
+    notes.add('Some keyframes use offset/scale tracks. baked as absolute.')
 
   const scalar = (field: NumericField, binding: KeyframeBinding) => {
     const kfs = setKeyframes(binding, markNonSet)

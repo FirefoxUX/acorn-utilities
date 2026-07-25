@@ -106,7 +106,7 @@
     (schedule?.segments ?? []).filter((s) => s.kind === 'hold'),
   )
 
-  // Start time (ms, base timeline) of each displayed frame, in order — the
+  // Start time (ms, base timeline) of each displayed frame, in order. the
   // snap targets for scrubbing so the playhead lands on real frames.
   const frameStarts = $derived.by(() => {
     const sched = schedule
@@ -151,8 +151,8 @@
 
   // Reset per-result authoring state when a fresh strip arrives. Pauses are
   // seeded from the result (restored off the source frame's plugin data) with
-  // fresh local ids. This assignment must not itself persist — only user edits
-  // do (see savePauses) — so there is no save echo on load.
+  // fresh local ids. This assignment must not itself persist. only user edits
+  // do (see savePauses). so there is no save echo on load.
   $effect(() => {
     const colors = result?.colors
     colorRoles = colors
@@ -477,8 +477,8 @@
   }
 
   // Firefox treats context-fill as an icon's default/primary color and
-  // context-stroke as a secondary color used only for a second tone — not a
-  // literal fill-vs-stroke split — so unmapped colors default to context-fill
+  // context-stroke as a secondary color used only for a second tone. not a
+  // literal fill-vs-stroke split. so unmapped colors default to context-fill
   // (see paintFor in render-frame.ts) and only 2+ colors get a per-color picker.
   let downloadFormat = $state<'firefox' | 'other'>('firefox')
   let colorRoles = $state<Record<string, ColorRole>>({})
@@ -898,7 +898,7 @@
     outline-offset: 2px
 
 // Rounds the track + fill without clipping the thumb (which overhangs the
-// track ends) — the thumb and pills are siblings of this, not children.
+// track ends). the thumb and pills are siblings of this, not children.
 .scrubber-clip
   position: absolute
   inset: 0

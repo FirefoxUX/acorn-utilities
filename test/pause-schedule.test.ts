@@ -57,7 +57,7 @@ describe('buildSchedule', () => {
 
   it('pause at the last frame synthesizes no trailing wrap play', () => {
     const { segments } = buildSchedule(10, 500, [pause('a', 9, 400)])
-    // play 0->9, then hold@9 — and nothing after.
+    // play 0->9, then hold@9. and nothing after.
     expect(segments).toHaveLength(2)
     expect(segments[0]).toMatchObject({ kind: 'play', fromFrame: 0, toFrame: 9, steps: 9 })
     expect(segments[1]).toMatchObject({ kind: 'hold', atFrame: 9 })

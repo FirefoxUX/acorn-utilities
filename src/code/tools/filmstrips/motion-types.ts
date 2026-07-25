@@ -2,7 +2,7 @@
 // @figma/plugin-typings (v1.123) does not yet ship these, so we mirror the
 // public docs (https://developers.figma.com/docs/plugins/api/Motion/) for the
 // subset we read, and access the node properties through typed accessors that
-// cast — keeping the `figma`-global untyped elsewhere.
+// cast. keeping the `figma`-global untyped elsewhere.
 
 export type MotionEasingType =
   | 'EASE_IN'

@@ -3,10 +3,14 @@ import {
   rotate,
   multiply,
   identity,
+  invert,
   fromFigmaTransform,
   toSvgMatrix,
   composePose,
   applyToPoint,
+  scale,
+  translate,
+  compose,
 } from '../src/code/tools/filmstrips/svg/matrix'
 import type { Pose } from '../src/code/tools/filmstrips/interpolate'
 
@@ -45,6 +49,20 @@ describe('toSvgMatrix', () => {
   })
 })
 
+describe('invert', () => {
+  it('round-trips a point through m then its inverse', () => {
+    const m = compose(translate(3, -4), rotate(0.7), scale(2, 5))
+    const inv = invert(m)!
+    const p = applyToPoint(multiply(inv, m), 6, 9)
+    expect(p.x).toBeCloseTo(6, 6)
+    expect(p.y).toBeCloseTo(9, 6)
+  })
+
+  it('returns null for a degenerate (zero-scale) matrix', () => {
+    expect(invert(scale(0, 1))).toBeNull()
+  })
+})
+
 describe('composePose', () => {
   it('rotates a 10x10 node 90° about its own center', () => {
     const pose: Pose = { rotation: 90, fills: [], strokes: [] }
@@ -57,5 +75,16 @@ describe('composePose', () => {
     const corner = applyToPoint(m, 0, 0)
     expect(corner.x).toBeCloseTo(0, 4)
     expect(corner.y).toBeCloseTo(10, 4)
+  })
+
+  it('applies pose translation in the parent frame, not the rotated resting frame', () => {
+    // A 90°-rotated resting matrix with a +x parent-space translation: the origin
+    // must land at (10, 0). Folding the translation under the rotation (the old
+    // behavior) would instead send it to (0, -10).
+    const pose: Pose = { translateX: 10, translateY: 0, fills: [], strokes: [] }
+    const m = composePose(rotate(Math.PI / 2), pose, 0, 0)
+    const p = applyToPoint(m, 0, 0)
+    expect(p.x).toBeCloseTo(10, 6)
+    expect(p.y).toBeCloseTo(0, 6)
   })
 })

@@ -1,4 +1,4 @@
-// Pure node classification utilities — no pipeline context, safe to unit-test in isolation.
+// Pure node classification utilities. no pipeline context, safe to unit-test in isolation.
 
 const BLACK_THRESHOLD = 0.01
 
@@ -12,7 +12,7 @@ function isVisiblePaint(paint: Paint): boolean {
 }
 
 /**
- * Check if a node is visible — has any visible fill OR visible stroke.
+ * Check if a node is visible. has any visible fill OR visible stroke.
  */
 export function isNodeVisible(node: SceneNode): boolean {
   // Check fills
@@ -120,7 +120,7 @@ export function flattenHierarchy(frame: FrameNode): void {
  * input shapes uniformly.
  *
  * Without this, `figma.union()` on a mix of fill-only and stroke-only
- * shapes can drop the fill geometry of some inputs — leaving only the
+ * shapes can drop the fill geometry of some inputs. leaving only the
  * stroke shape's outline in the flattened result.
  */
 export function outlineStrokesInside(parent: FrameNode | GroupNode): void {
