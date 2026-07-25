@@ -44,6 +44,12 @@ for (const id of TOOL_ORDER) {
 // Hydrate the UI store on mount.
 messenger.on('app:get-state', () => state)
 
+// Current selection count for views that mount after the last selectionchange.
+messenger.on(
+  'app:get-selection-count',
+  () => figma.currentPage.selection.length,
+)
+
 messenger.on('app:resize-window', handleResizeWindow)
 
 // Open a tool (or return to the menu when id is null): deactivate the

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { filmstripsState } from '@ui/tools/filmstrips/store'
+  import { messenger } from '@src/message-handler'
   import { errorStore } from '@ui/store/error'
   import { nav } from '@ui/lib/nav'
   import { TOOLS } from '@tools/registry'
+  import type { FrameCountSuggestion } from '@tools/filmstrips/types'
   import Button from 'tint/components/Button.svelte'
   import Dialog, { type DialogOptions } from 'tint/components/Dialog.svelte'
   import TextField from 'tint/components/TextField.svelte'
@@ -32,8 +34,15 @@
     | ((options?: DialogOptions) => Promise<boolean>)
     | undefined = $state(undefined)
   let importFrameCount = $state('2')
+  let frameSuggestions = $state<FrameCountSuggestion[]>([])
 
   async function handleImportStrip() {
+    // Offer guessed counts as chips and preselect the first, so the field and a
+    // chip start in sync; the user can click another chip or type their own.
+    frameSuggestions = await messenger.request(
+      'filmstrip:frame-count-suggestions',
+    )
+    importFrameCount = String(frameSuggestions[0]?.value ?? 2)
     const confirmed = await openImportDialog?.()
     if (!confirmed) return
     const frameCount = Math.max(2, parseInt(importFrameCount) || 2)
@@ -91,9 +100,26 @@
   heading="Import filmstrip"
   actionLabel="Import"
 >
+  {#if frameSuggestions.length > 0}
+    <div class="frame-suggestions">
+      <span class="tint--type-ui-small suggestions-label">Suggested</span>
+      <div class="chips">
+        {#each frameSuggestions as suggestion (suggestion.label)}
+          <Button
+            small
+            variant="secondary"
+            toggled={importFrameCount === String(suggestion.value)}
+            onclick={() => (importFrameCount = String(suggestion.value))}
+          >
+            {suggestion.value} · {suggestion.label.toLowerCase()}
+          </Button>
+        {/each}
+      </div>
+    </div>
+  {/if}
   <TextField
     label="Number of frames"
-    type="number"
+    inputmode="numeric"
     bind:value={importFrameCount}
     helperText="How many equal-width cells make up the selected strip."
   />
@@ -125,4 +151,18 @@
   color: var(--error-color)
   p
     margin: 0
+
+.frame-suggestions
+  display: flex
+  flex-direction: column
+  gap: tint.$size-4
+  margin-bottom: tint.$size-12
+
+.suggestions-label
+  color: var(--tint-text-secondary)
+
+.chips
+  display: flex
+  flex-wrap: wrap
+  gap: tint.$size-8
 </style>

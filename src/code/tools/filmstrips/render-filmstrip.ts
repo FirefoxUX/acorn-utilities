@@ -4,6 +4,8 @@
 
 import { renderFrame, type RenderOptions } from './render-frame'
 import { nestedSvg, svgRoot } from './svg/emit'
+import { el, type SvgChild } from './svg/node'
+import { serialize } from './svg/serialize'
 import type { SceneModel } from './build-scene'
 
 /** Optional per-frame progress callback (1-based frame index and total). */
@@ -22,13 +24,13 @@ export function renderFilmstrip(
   options: RenderOptions,
   onProgress?: FrameProgress,
 ): string {
-  const cells: string[] = []
+  const cells: SvgChild[] = []
   for (let i = 0; i < frameCount; i++) {
     const t = (i / frameCount) * durationSec
-    const { markup, defs } = renderFrame(scene, t, i, options)
-    const body = defs.length ? `<defs>${defs.join('')}</defs>${markup}` : markup
+    const { nodes, defs } = renderFrame(scene, t, i, options)
+    const body = defs.length ? [el('defs', {}, defs), ...nodes] : nodes
     cells.push(nestedSvg(i * cellW, 0, cellW, cellH, body))
     onProgress?.(i + 1, frameCount)
   }
-  return svgRoot(cellW * frameCount, cellH, cells.join(''))
+  return serialize(svgRoot(cellW * frameCount, cellH, cells))
 }

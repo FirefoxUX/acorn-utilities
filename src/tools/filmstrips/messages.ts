@@ -9,6 +9,7 @@ import type {
   ColorMapping,
   FilmstripOptions,
   FilmstripResult,
+  FrameCountSuggestion,
   StoredPause,
 } from './types'
 
@@ -20,6 +21,14 @@ export interface FilmstripsMessages {
   /** Treat the single selected frame as a ready-made filmstrip. */
   'filmstrip:import-strip': FunctionToMessage<
     (frameCount: number) => { error?: string; result?: FilmstripResult }
+  >
+  /**
+   * Guessed frame counts for the import dialog, offered as chips. A baked strip
+   * is usually one layer per cell (child count) and a whole-number width/height
+   * ratio (each cell square-ish). Empty when nothing sensible can be inferred.
+   */
+  'filmstrip:frame-count-suggestions': FunctionToMessage<
+    () => FrameCountSuggestion[]
   >
   /**
    * Re-render the last generated strip's SVG with a Firefox color mapping

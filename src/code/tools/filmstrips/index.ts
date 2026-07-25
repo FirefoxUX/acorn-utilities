@@ -145,6 +145,34 @@ export function registerFilmstrips(ctx: ToolContext): ToolBackend {
     }
   })
 
+  messenger.on('filmstrip:frame-count-suggestions', () => {
+    const selection = figma.currentPage.selection
+    if (selection.length !== 1) return []
+    const node = selection[0]
+    const suggestions: { label: string; value: number }[] = []
+
+    // One layer per cell is the common baked-strip shape.
+    const layers = 'children' in node ? node.children.length : 0
+    if (layers >= 2) suggestions.push({ label: 'Layers', value: layers })
+
+    // A strip is wider than tall; a whole-number width/height means square-ish
+    // cells, and the ratio is the cell count. Only offer it when it's exact and
+    // not a duplicate of the layer guess.
+    if ('width' in node && 'height' in node && node.height > 0) {
+      const ratio = node.width / node.height
+      const rounded = Math.round(ratio)
+      if (
+        rounded >= 2 &&
+        Math.abs(ratio - rounded) < 1e-6 &&
+        !suggestions.some((s) => s.value === rounded)
+      ) {
+        suggestions.push({ label: 'Aspect ratio', value: rounded })
+      }
+    }
+
+    return suggestions
+  })
+
   messenger.on('filmstrip:render-context', (mapping) => {
     if (!cachedScene) {
       return { error: 'No Firefox color mapping available for this strip.' }

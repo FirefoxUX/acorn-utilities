@@ -3,7 +3,7 @@
 // essentially never animate in practice, so the resting definition is enough.
 
 import type { SceneModel, SceneNodeModel } from './build-scene'
-import { rgbToHex } from './svg/emit'
+import { rgbToHex } from './svg/round'
 
 function walk(node: SceneNodeModel, seen: Set<string>): void {
   // A mask node's fill is consumed as a clip, never painted, so it must not

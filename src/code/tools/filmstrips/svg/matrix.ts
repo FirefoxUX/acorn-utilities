@@ -3,6 +3,7 @@
 // (a*x + c*y + e, b*x + d*y + f). `multiply(m1, m2)` applies m2 then m1.
 
 import type { Pose } from '../interpolate'
+import { round } from './round'
 
 export interface Affine {
   a: number
@@ -90,8 +91,7 @@ export function applyToPoint(
 
 /** Serialize to an SVG `matrix(a,b,c,d,e,f)` string. */
 export function toSvgMatrix(m: Affine, precision = 4): string {
-  const f = 10 ** precision
-  const r = (n: number) => Math.round(n * f) / f
+  const r = (n: number) => round(n, precision)
   return `matrix(${r(m.a)} ${r(m.b)} ${r(m.c)} ${r(m.d)} ${r(m.e)} ${r(m.f)})`
 }
 
