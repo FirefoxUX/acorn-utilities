@@ -32,6 +32,12 @@ export type ColorMapping = Record<string, ColorRole>
  */
 export type StoredPause = { atFrame: number; durationMs: number }
 
+/**
+ * A guessed frame count for the import dialog, with the heuristic it came from
+ * (shown as a chip). `label` is the source ("Layers", "Aspect ratio").
+ */
+export type FrameCountSuggestion = { label: string; value: number }
+
 /** Cheap, cloning-free summary of the current selection's Motion animation. */
 export type SelectionMotionInfo = {
   name: string

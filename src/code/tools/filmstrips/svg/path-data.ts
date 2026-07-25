@@ -3,6 +3,8 @@
 // promoted to cubics so the length, trim, and outline math work on one segment
 // type. Closed subpaths are normalized so their segments form the full loop.
 
+import { round } from './round'
+
 export interface Point {
   x: number
   y: number
@@ -155,10 +157,7 @@ export function parsePath(data: string): Subpath[] {
  * are straight; emitting lines instead of cubics keeps the markup small.
  */
 export function polygonsToData(polygons: Point[][], precision = 3): string {
-  const r = (n: number) => {
-    const f = 10 ** precision
-    return String(Math.round(n * f) / f)
-  }
+  const r = (n: number) => String(round(n, precision))
   const parts: string[] = []
   for (const poly of polygons) {
     if (poly.length < 3) continue
@@ -173,10 +172,7 @@ export function polygonsToData(polygons: Point[][], precision = 3): string {
 
 /** Serialize subpaths to an SVG path string (M, a C per segment, Z if closed). */
 export function subpathsToData(subpaths: Subpath[], precision = 3): string {
-  const r = (n: number) => {
-    const f = 10 ** precision
-    return String(Math.round(n * f) / f)
-  }
+  const r = (n: number) => String(round(n, precision))
   const parts: string[] = []
   for (const sp of subpaths) {
     if (sp.segments.length === 0) continue

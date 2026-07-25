@@ -14,6 +14,11 @@ export interface AppMessages {
   /** Hydrate the UI store with the current plugin state on mount. */
   'app:get-state': FunctionToMessage<() => AppState>
   /**
+   * Current raw selection count. `selectionchange` only fires on change, so a
+   * view that mounts with a pre-existing selection needs this to hydrate.
+   */
+  'app:get-selection-count': FunctionToMessage<() => number>
+  /**
    * Open a tool (or `null` for the menu). A one-way notification. navigation
    * needs no response, and the resulting `app:state-change` broadcast is what
    * the UI reacts to.

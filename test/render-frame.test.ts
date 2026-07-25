@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderFrame, type RenderOptions } from '../src/code/tools/filmstrips/render-frame'
+import { serialize } from '../src/code/tools/filmstrips/svg/serialize'
 import { parsePath } from '../src/code/tools/filmstrips/svg/path-data'
 import {
   identity,
@@ -14,6 +15,13 @@ import type {
 
 const OPTS: RenderOptions = { strokeOutput: 'stroke', colorMapping: null }
 const SQUARE = parsePath('M0 0 L10 0 L10 10 L0 10 Z')
+
+// renderFrame now returns a node tree; serialize it so the assertions can stay
+// on the exact markup they always pinned.
+function render(...args: Parameters<typeof renderFrame>) {
+  const { nodes, defs } = renderFrame(...args)
+  return { nodes, defsNodes: defs, markup: serialize(nodes), defs: serialize(defs) }
+}
 
 function solid(r: number, g: number, b: number, a = 1): Paint {
   return { kind: 'solid', color: { r, g, b, a } }
@@ -94,13 +102,12 @@ describe('gradient fills', () => {
         fillRule: 'nonzero',
       },
     })
-    const { markup, defs } = renderFrame(scene([g]), 0, 0, OPTS)
+    const { markup, defs } = render(scene([g]), 0, 0, OPTS)
     expect(markup).toContain('fill="url(#f0_0)"')
     // No fill-opacity: gradient alpha lives in the stops.
     expect(markup).not.toContain('fill-opacity')
-    const d = defs.join('')
-    expect(d).toContain('<linearGradient id="f0_0"')
-    expect(d).toContain('x2="10"') // identity handle spans the 10px-wide box
+    expect(defs).toContain('<linearGradient id="f0_0"')
+    expect(defs).toContain('x2="10"') // identity handle spans the 10px-wide box
   })
 
   it('folds paint opacity into each stop-opacity', () => {
@@ -128,10 +135,9 @@ describe('gradient fills', () => {
         fillRule: 'nonzero',
       },
     })
-    const { defs } = renderFrame(scene([g]), 0, 0, OPTS)
-    const d = defs.join('')
-    expect(d).toContain('stop-opacity="0.2"') // 0.4 * 0.5
-    expect(d).toContain('stop-opacity="0.5"') // 1 * 0.5
+    const { defs } = render(scene([g]), 0, 0, OPTS)
+    expect(defs).toContain('stop-opacity="0.2"') // 0.4 * 0.5
+    expect(defs).toContain('stop-opacity="0.5"') // 1 * 0.5
   })
 
   it('prefixes def ids with the frame index', () => {
@@ -156,9 +162,9 @@ describe('gradient fills', () => {
         fillRule: 'nonzero',
       },
     })
-    const { markup, defs } = renderFrame(scene([g]), 7, 7, OPTS)
+    const { markup, defs } = render(scene([g]), 7, 7, OPTS)
     expect(markup).toContain('url(#f7_0)')
-    expect(defs.join('')).toContain('<radialGradient id="f7_0"')
+    expect(defs).toContain('<radialGradient id="f7_0"')
   })
 })
 
@@ -187,14 +193,14 @@ describe('masks', () => {
         fillRule: 'nonzero',
       },
     })
-    const { markup, defs } = renderFrame(scene([mask, content]), 0, 0, OPTS)
-    expect(defs.join('')).toContain('<clipPath id="f0_0">')
+    const { markup, defs } = render(scene([mask, content]), 0, 0, OPTS)
+    expect(defs).toContain('<clipPath id="f0_0">')
     expect(markup).toContain('clip-path="url(#f0_0)"')
     // Content is drawn; the mask's own color never is.
     expect(markup).toContain('fill="#0000ff"')
     expect(markup).not.toContain('764edd')
     // The clip geometry is a bare path with no paint.
-    expect(defs.join('')).not.toContain('764edd')
+    expect(defs).not.toContain('764edd')
   })
 
   it('uses an alpha <mask> for a group mask and walks its subtree', () => {
@@ -213,11 +219,11 @@ describe('masks', () => {
     })
     const softMask = container([inner], { isMask: true })
     const content = leaf()
-    const { markup, defs } = renderFrame(scene([softMask, content]), 0, 0, OPTS)
-    expect(defs.join('')).toContain('mask-type="alpha"')
+    const { markup, defs } = render(scene([softMask, content]), 0, 0, OPTS)
+    expect(defs).toContain('mask-type="alpha"')
     expect(markup).toContain('mask="url(#f0_0)"')
     // Mask body contains the inner shape's path.
-    expect(defs.join('')).toContain('<path')
+    expect(defs).toContain('<path')
   })
 
   it('bakes the mask and content in the same frame space (alignment)', () => {
@@ -234,9 +240,9 @@ describe('masks', () => {
         fillRule: 'nonzero',
       },
     })
-    const { markup, defs } = renderFrame(scene([mask, content]), 0, 0, OPTS)
+    const { markup, defs } = render(scene([mask, content]), 0, 0, OPTS)
     // Both the clip geometry and the clipped content carry the same transform.
-    expect(defs.join('')).toContain('matrix(1 0 0 1 5 0)')
+    expect(defs).toContain('matrix(1 0 0 1 5 0)')
     expect(markup).toContain('matrix(1 0 0 1 5 0)')
   })
 
@@ -255,7 +261,7 @@ describe('masks', () => {
     })
     const root = scene([])
     root.root = container([mask, content], { baseOpacity: 0.5 })
-    const { markup } = renderFrame(root, 0, 0, OPTS)
+    const { markup } = render(root, 0, 0, OPTS)
     // Opacity rides on the content leaf, not on the clip wrapper.
     expect(markup).toContain('<g clip-path="url(#f0_0)">')
     expect(markup).toContain('opacity="0.5"')
@@ -263,8 +269,8 @@ describe('masks', () => {
 
   it('emits nothing for a mask with no following siblings', () => {
     const mask = leaf({ isMask: true })
-    const { markup, defs } = renderFrame(scene([mask]), 0, 0, OPTS)
-    expect(markup).toBe('')
-    expect(defs).toEqual([])
+    const { nodes, defsNodes } = render(scene([mask]), 0, 0, OPTS)
+    expect(nodes).toEqual([])
+    expect(defsNodes).toEqual([])
   })
 })

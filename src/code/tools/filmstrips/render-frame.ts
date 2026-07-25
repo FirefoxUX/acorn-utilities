@@ -1,4 +1,4 @@
-// Renders one filmstrip frame to SVG markup from a SceneModel at time t. It
+// Renders one filmstrip frame to an SVG node tree from a SceneModel at time t. It
 // walks the tree composing world transforms and cumulative opacity, trims
 // stroked centerlines, and emits each leaf's fills and strokes. Stroke output
 // is either an SVG stroke or a filled outline; paint is either a literal color,
@@ -24,8 +24,7 @@ import { outlineStroke } from './svg/outline'
 import { subpathsToData, polygonsToData } from './svg/path-data'
 import {
   pathEl,
-  groupEl,
-  rgbToHex,
+  groupNodes,
   stopEl,
   linearGradientEl,
   radialGradientEl,
@@ -33,6 +32,8 @@ import {
   maskEl,
   maskWrapperEl,
 } from './svg/emit'
+import { rgbToHex } from './svg/round'
+import { el, type SvgChild, type SvgElement } from './svg/node'
 import { linearHandles, radialTransform } from './svg/gradient'
 import type {
   SceneModel,
@@ -49,10 +50,10 @@ export interface RenderOptions {
   colorMapping: ColorMapping | null
 }
 
-/** Inner SVG markup plus the per-frame defs (gradients, clip/mask) it referenced. */
+/** Inner SVG nodes plus the per-frame defs (gradients, clip/mask) they referenced. */
 export interface RenderedFrame {
-  markup: string
-  defs: string[]
+  nodes: SvgChild[]
+  defs: SvgElement[]
 }
 
 // Mutable per-frame state threaded through the walk: the frame index and a
@@ -62,7 +63,7 @@ interface RenderContext {
   options: RenderOptions
   cellW: number
   cellH: number
-  defs: string[]
+  defs: SvgElement[]
   seq: number
 }
 
@@ -91,15 +92,13 @@ function emitGradient(
   h: number,
   ctx: RenderContext,
 ): string | null {
-  const stops = paint.stops
-    .map((s) =>
-      stopEl(
-        s.position,
-        rgbToHex(s.color.r, s.color.g, s.color.b),
-        s.color.a * paint.opacity,
-      ),
-    )
-    .join('')
+  const stops = paint.stops.map((s) =>
+    stopEl(
+      s.position,
+      rgbToHex(s.color.r, s.color.g, s.color.b),
+      s.color.a * paint.opacity,
+    ),
+  )
 
   const id = `f${ctx.frameIndex}_${ctx.seq}`
   if (paint.gradientType === 'linear') {
@@ -153,10 +152,10 @@ function renderLeaf(
   node: SceneNodeModel,
   pose: Pose,
   ctx: RenderContext,
-): string {
+): SvgChild[] {
   const { geometry, style } = node
-  if (!geometry || !style) return ''
-  const parts: string[] = []
+  if (!geometry || !style) return []
+  const parts: SvgChild[] = []
 
   // Fill.
   const fillPaint = firstPaint(style.fills, pose.fills)
@@ -229,7 +228,7 @@ function renderLeaf(
     }
   }
 
-  return parts.join('')
+  return parts
 }
 
 // Compose a node's world transform at time t (matches walk's own composition).
@@ -258,20 +257,23 @@ function isSolidOpaqueMask(node: SceneNodeModel): boolean {
 // transform-free, and the mask geometry is baked in the same frame space.
 function buildMaskWrapper(
   maskNode: SceneNodeModel,
-  inner: string,
+  inner: SvgChild[],
   parentWorld: Affine,
   t: number,
   ctx: RenderContext,
-): string {
+): SvgElement {
   const world = worldOf(maskNode, parentWorld, t)
   const id = `f${ctx.frameIndex}_${ctx.seq++}`
 
   if (isSolidOpaqueMask(maskNode) && maskNode.geometry) {
-    const clip = `<path transform="${toSvgMatrix(world)}" d="${subpathsToData(
-      maskNode.geometry.fillSubpaths,
-    )}"/>`
-    ctx.defs.push(clipPathEl(id, clip))
-    return maskWrapperEl(`clip-path="url(#${id})"`, inner)
+    // Bare geometry: a <clipPath> can't hold a <g>, so the world transform rides
+    // on the path itself (transform before d, no paint).
+    const clip = el('path', {
+      transform: toSvgMatrix(world),
+      d: subpathsToData(maskNode.geometry.fillSubpaths),
+    })
+    ctx.defs.push(clipPathEl(id, [clip]))
+    return maskWrapperEl({ 'clip-path': `url(#${id})` }, inner)
   }
 
   // Soft mask: render the mask subtree normally (its fills' alpha is meaningful)
@@ -279,7 +281,7 @@ function buildMaskWrapper(
   // masked content, not the mask.
   const content = walk(maskNode, parentWorld, 1, t, ctx)
   ctx.defs.push(maskEl(id, ctx.cellW, ctx.cellH, content))
-  return maskWrapperEl(`mask="url(#${id})"`, inner)
+  return maskWrapperEl({ mask: `url(#${id})` }, inner)
 }
 
 // Render a container's children, applying Figma mask semantics: a child marked
@@ -290,13 +292,13 @@ function walkChildren(
   parentOpacity: number,
   t: number,
   ctx: RenderContext,
-): string {
-  const out: string[] = []
+): SvgChild[] {
+  const out: SvgChild[] = []
   let i = 0
   while (i < children.length) {
     const child = children[i]
     if (!child.isMask) {
-      out.push(walk(child, parentWorld, parentOpacity, t, ctx))
+      out.push(...walk(child, parentWorld, parentOpacity, t, ctx))
       i++
       continue
     }
@@ -307,14 +309,17 @@ function walkChildren(
       masked.push(children[j])
       j++
     }
-    const inner = masked
-      .map((m) => walk(m, parentWorld, parentOpacity, t, ctx))
-      .join('')
+    const inner: SvgChild[] = []
+    for (const m of masked) {
+      inner.push(...walk(m, parentWorld, parentOpacity, t, ctx))
+    }
     // Empty run: the mask clips nothing, so emit nothing and no orphan def.
-    if (inner) out.push(buildMaskWrapper(child, inner, parentWorld, t, ctx))
+    if (inner.length > 0) {
+      out.push(buildMaskWrapper(child, inner, parentWorld, t, ctx))
+    }
     i = j
   }
-  return out.join('')
+  return out
 }
 
 function walk(
@@ -323,8 +328,8 @@ function walk(
   parentOpacity: number,
   t: number,
   ctx: RenderContext,
-): string {
-  if (!node.visible) return ''
+): SvgChild[] {
+  if (!node.visible) return []
   const pose = node.tracks ? buildPose(node.tracks, t) : EMPTY_POSE
   const local = node.tracks
     ? composePose(node.restingMatrix, pose, node.width, node.height)
@@ -332,19 +337,16 @@ function walk(
   const world = multiply(parentWorld, local)
   const opacity = parentOpacity * node.baseOpacity * (pose.opacity ?? 1)
 
-  let markup: string
-  if (node.isLeaf) {
-    markup = renderLeaf(node, pose, ctx)
-  } else {
-    markup = walkChildren(node.children, world, opacity, t, ctx)
-  }
-  if (!markup) return ''
+  const markup: SvgChild[] = node.isLeaf
+    ? renderLeaf(node, pose, ctx)
+    : walkChildren(node.children, world, opacity, t, ctx)
+  if (markup.length === 0) return []
 
   // Leaves carry the composed transform; containers only pass it down.
-  return node.isLeaf ? groupEl(toSvgMatrix(world), opacity, markup) : markup
+  return node.isLeaf ? groupNodes(toSvgMatrix(world), opacity, markup) : markup
 }
 
-/** Inner SVG markup + defs for the scene at time t seconds (frame `frameIndex`). */
+/** Inner SVG nodes + defs for the scene at time t seconds (frame `frameIndex`). */
 export function renderFrame(
   scene: SceneModel,
   t: number,
@@ -359,6 +361,6 @@ export function renderFrame(
     defs: [],
     seq: 0,
   }
-  const markup = walk(scene.root, identity(), 1, t, ctx)
-  return { markup, defs: ctx.defs }
+  const nodes = walk(scene.root, identity(), 1, t, ctx)
+  return { nodes, defs: ctx.defs }
 }
