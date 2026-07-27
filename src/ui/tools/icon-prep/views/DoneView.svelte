@@ -167,13 +167,13 @@
 .body
   display: flex
   flex-direction: column
-  gap: tint.$size-12
-  padding: tint.$size-16
+  gap: var(--tint-size-12)
+  padding: var(--tint-size-16)
 
 .errors-section
   display: flex
   flex-direction: column
-  gap: tint.$size-4
+  gap: var(--tint-size-4)
 
 .errors-description,
 .unmatched-description
@@ -185,18 +185,18 @@
   padding: 0
 
 .error-item
-  border-bottom: 1px solid var(--tint-card-border)
+  border-block-end: 1px solid var(--tint-card-border)
   &:last-child
-    border-bottom: none
+    border-block-end: none
 
 .error-button
   all: unset
   display: flex
   align-items: center
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
   width: 100%
   box-sizing: border-box
-  padding: tint.$size-8
+  padding: var(--tint-size-8)
   cursor: pointer
   transition: background 0.15s ease
   &:hover
@@ -238,8 +238,8 @@
   color: var(--error-color)
 
 .error-chevron
-  width: tint.$size-24
-  height: tint.$size-24
+  width: var(--tint-size-24)
+  height: var(--tint-size-24)
   display: flex
   align-items: center
   justify-content: center
@@ -249,10 +249,12 @@
 .detail-nav
   display: flex
   align-items: center
-  gap: tint.$size-8
-  margin: 0 (- tint.$size-16)
-  padding: 0 tint.$size-16 tint.$size-8
-  border-bottom: 1px solid var(--tint-card-border)
+  gap: var(--tint-size-8)
+  margin-block: 0
+  margin-inline: (- var(--tint-size-16))
+  padding-block: 0 var(--tint-size-8)
+  padding-inline: var(--tint-size-16)
+  border-block-end: 1px solid var(--tint-card-border)
 
 .detail-title
   flex: 1
@@ -267,19 +269,19 @@
 .detail-pipeline
   display: flex
   flex-direction: column
-  gap: tint.$size-12
+  gap: var(--tint-size-12)
 
 .detail-step
   display: flex
   align-items: flex-start
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .detail-dot
   width: 10px
   height: 10px
   border-radius: 50%
   flex-shrink: 0
-  margin-top: 3px
+  margin-block-start: 3px
 
 .detail-dot--completed
   background: var(--tint-text)
@@ -312,17 +314,17 @@
 .unmatched-section
   display: flex
   flex-direction: column
-  gap: tint.$size-4
+  gap: var(--tint-size-4)
 
 .unmatched-item
   display: flex
   align-items: center
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .unmatched-list
   max-height: 120px
   overflow-y: auto
   display: flex
   flex-direction: column
-  gap: tint.$size-2
+  gap: var(--tint-size-2)
 </style>

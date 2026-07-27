@@ -21,8 +21,9 @@
   gap: 2px
   flex: 1
   min-width: 0
-  padding: tint.$size-12 tint.$size-8
-  border-radius: tint.$size-8
+  padding-block: var(--tint-size-12)
+  padding-inline: var(--tint-size-8)
+  border-radius: var(--tint-size-8)
   background: color-mix(in srgb, var(--tint-text) 6%, transparent)
   text-align: center
 

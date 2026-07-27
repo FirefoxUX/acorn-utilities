@@ -119,7 +119,9 @@
   {/if}
   <TextField
     label="Number of frames"
-    inputmode="numeric"
+    type="number"
+    min={2}
+    step={1}
     bind:value={importFrameCount}
     helperText="How many equal-width cells make up the selected strip."
   />
@@ -143,10 +145,10 @@
   display: flex
   flex-direction: column
   align-items: flex-start
-  gap: tint.$size-8
-  margin: tint.$size-16
-  padding: tint.$size-12
-  border-radius: tint.$size-4
+  gap: var(--tint-size-8)
+  margin: var(--tint-size-16)
+  padding: var(--tint-size-12)
+  border-radius: var(--tint-size-4)
   background: var(--error-bg)
   color: var(--error-color)
   p
@@ -155,8 +157,8 @@
 .frame-suggestions
   display: flex
   flex-direction: column
-  gap: tint.$size-4
-  margin-bottom: tint.$size-12
+  gap: var(--tint-size-4)
+  margin-block-end: var(--tint-size-12)
 
 .suggestions-label
   color: var(--tint-text-secondary)
@@ -164,5 +166,5 @@
 .chips
   display: flex
   flex-wrap: wrap
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 </style>

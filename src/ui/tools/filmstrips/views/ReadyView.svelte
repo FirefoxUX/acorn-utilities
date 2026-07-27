@@ -73,25 +73,25 @@
   flex-direction: column
   flex: 1
   min-height: 0
-  gap: tint.$size-16
-  padding: tint.$size-16
+  gap: var(--tint-size-16)
+  padding: var(--tint-size-16)
   overflow-y: auto
 
 .stats
   display: flex
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .notes
   display: flex
   flex-direction: column
-  gap: tint.$size-4
-  padding: tint.$size-8
-  border-radius: tint.$size-4
+  gap: var(--tint-size-4)
+  padding: var(--tint-size-8)
+  border-radius: var(--tint-size-4)
   background: var(--warning-bg)
   color: var(--warning-color)
   ul
     margin: 0
-    padding-left: tint.$size-16
+    padding-inline-start: var(--tint-size-16)
 
 .spacer
   flex: 1

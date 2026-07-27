@@ -22,6 +22,6 @@
 <style lang="sass">
 .card
   border: 1px solid var(--tint-card-border)
-  border-radius: tint.$size-8
-  padding: tint.$size-12
+  border-radius: var(--tint-size-8)
+  padding: var(--tint-size-12)
 </style>

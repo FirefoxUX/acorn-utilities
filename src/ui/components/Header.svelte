@@ -43,9 +43,10 @@
   display: flex
   align-items: center
   justify-content: space-between
-  gap: tint.$size-8
-  padding: tint.$size-8 tint.$size-12
-  border-bottom: 1px solid var(--tint-card-border)
+  gap: var(--tint-size-8)
+  padding-block: var(--tint-size-8)
+  padding-inline: var(--tint-size-12)
+  border-block-end: 1px solid var(--tint-card-border)
   min-height: 48px
   box-sizing: border-box
   flex-shrink: 0
@@ -53,7 +54,7 @@
 .leading
   display: flex
   align-items: center
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
   min-width: 0
 
 h1
@@ -65,6 +66,6 @@ h1
 .actions
   display: flex
   align-items: center
-  gap: tint.$size-4
+  gap: var(--tint-size-4)
   flex-shrink: 0
 </style>

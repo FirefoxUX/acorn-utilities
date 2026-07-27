@@ -17,8 +17,8 @@
 .accent-bar
   display: flex
   align-items: center
-  gap: tint.$size-8
-  padding: tint.$size-16
+  gap: var(--tint-size-8)
+  padding: var(--tint-size-16)
   background: var(--tint-action-primary)
   color: var(--tint-action-primary-text)
   flex-shrink: 0

@@ -86,10 +86,10 @@
   display: flex
   flex-direction: column
   align-items: flex-start
-  gap: tint.$size-8
-  margin: tint.$size-16
-  padding: tint.$size-12
-  border-radius: tint.$size-4
+  gap: var(--tint-size-8)
+  margin: var(--tint-size-16)
+  padding: var(--tint-size-12)
+  border-radius: var(--tint-size-4)
   background: var(--error-bg)
   color: var(--error-color)
   p

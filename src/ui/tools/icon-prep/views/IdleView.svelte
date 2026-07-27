@@ -61,6 +61,6 @@
 
 .settings
   flex-shrink: 0
-  padding: tint.$size-16
-  border-top: 1px solid var(--tint-card-border)
+  padding: var(--tint-size-16)
+  border-block-start: 1px solid var(--tint-card-border)
 </style>

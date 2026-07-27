@@ -34,10 +34,11 @@
   flex-direction: column
   align-items: center
   text-align: center
-  gap: tint.$size-4
-  padding: tint.$size-16 tint.$size-12
+  gap: var(--tint-size-4)
+  padding-block: var(--tint-size-16)
+  padding-inline: var(--tint-size-12)
   border: 1px solid var(--tint-card-border)
-  border-radius: tint.$size-8
+  border-radius: var(--tint-size-8)
   cursor: pointer
   transition: background 0.15s ease, border-color 0.15s ease
   &:hover
@@ -48,13 +49,13 @@
     outline-offset: 2px
 
 .tool-icon
-  width: tint.$size-32
-  height: tint.$size-32
+  width: var(--tint-size-32)
+  height: var(--tint-size-32)
   display: flex
   align-items: center
   justify-content: center
   color: var(--tool-accent)
-  margin-bottom: tint.$size-4
+  margin-block-end: var(--tint-size-4)
 
 .tool-title
   color: var(--tint-text)

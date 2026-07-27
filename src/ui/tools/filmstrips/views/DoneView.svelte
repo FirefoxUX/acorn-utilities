@@ -849,15 +849,15 @@
 .body
   display: flex
   flex-direction: column
-  gap: tint.$size-12
-  padding: tint.$size-16
+  gap: var(--tint-size-12)
+  padding: var(--tint-size-16)
 
 .preview-controls
   display: flex
   flex-wrap: wrap
   align-items: center
   justify-content: space-between
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .preview
   display: flex
@@ -866,7 +866,7 @@
   box-sizing: border-box
   width: 100%
   aspect-ratio: 16 / 10
-  border-radius: tint.$size-8
+  border-radius: var(--tint-size-8)
   background-color: var(--tint-input-bg)
   background-image: linear-gradient(45deg, var(--tint-card-border) 25%, transparent 25%), linear-gradient(-45deg, var(--tint-card-border) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--tint-card-border) 75%), linear-gradient(-45deg, transparent 75%, var(--tint-card-border) 75%)
   background-size: 16px 16px
@@ -884,7 +884,7 @@
 .timeline
   display: flex
   align-items: center
-  gap: tint.$size-4
+  gap: var(--tint-size-4)
 
 .scrubber
   position: relative
@@ -913,8 +913,8 @@
 
 .fill
   position: absolute
-  top: 0
-  left: 0
+  inset-block-start: 0
+  inset-inline-start: 0
   height: 100%
   // No radius here: the rounded shape comes from `.scrubber-clip`, so the
   // fill's right (playhead) edge stays flat.
@@ -923,7 +923,7 @@
 
 .pause-pill
   position: absolute
-  top: 0
+  inset-block-start: 0
   height: 100%
   z-index: 1
   box-sizing: border-box
@@ -933,7 +933,7 @@
   align-items: center
   justify-content: center
   border: 2px solid currentColor
-  border-radius: tint.$size-8
+  border-radius: var(--tint-size-8)
   // 75% white so the pill reads correctly over both the green fill and the
   // grey track.
   background: color-mix(in srgb, #fff 75%, transparent)
@@ -953,15 +953,15 @@
 
 .pause-resize
   position: absolute
-  top: 0
-  right: 0
+  inset-block-start: 0
+  inset-inline-end: 0
   width: 8px
   height: 100%
   cursor: ew-resize
 
 .thumb
   position: absolute
-  top: 50%
+  inset-block-start: 50%
   z-index: 2
   width: 24px
   height: 24px
@@ -978,7 +978,7 @@
 .transport
   display: flex
   align-items: center
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .frame-readout
   color: var(--tint-text-secondary)
@@ -987,7 +987,7 @@
 .controls-group
   display: flex
   align-items: center
-  gap: tint.$size-4
+  gap: var(--tint-size-4)
 
 .speed-anchor
   display: flex
@@ -995,22 +995,22 @@
 .pause-editor
   display: flex
   align-items: flex-start
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .pause-editor-fields
   display: flex
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
   flex: 1
   min-width: 0
 
 .stats
   display: flex
   flex-wrap: wrap
-  gap: tint.$size-4 tint.$size-16
+  gap: var(--tint-size-4) var(--tint-size-16)
 
 .stat
   display: inline-flex
-  gap: tint.$size-4
+  gap: var(--tint-size-4)
 
 .stat-label
   color: var(--tint-text-secondary)
@@ -1018,7 +1018,7 @@
 .download-card
   display: flex
   flex-direction: column
-  gap: tint.$size-12
+  gap: var(--tint-size-12)
 
 .download-action
   display: flex
@@ -1035,7 +1035,7 @@
 .color-roles
   display: flex
   flex-direction: column
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .color-roles-hint
   color: var(--tint-text-secondary)
@@ -1043,13 +1043,13 @@
 .color-role-row
   display: flex
   align-items: center
-  gap: tint.$size-8
+  gap: var(--tint-size-8)
 
 .swatch
   flex-shrink: 0
-  width: tint.$size-24
-  height: tint.$size-24
-  border-radius: tint.$size-4
+  width: var(--tint-size-24)
+  height: var(--tint-size-24)
+  border-radius: var(--tint-size-4)
   border: 1px solid var(--tint-card-border)
 
 .swatch-hex

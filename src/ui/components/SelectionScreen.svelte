@@ -86,8 +86,8 @@
 
 .badge
   position: absolute
-  bottom: 0
-  left: 50%
+  inset-block-end: 0
+  inset-inline-start: 50%
   z-index: 1
   transform: translate(-50%, 50%)
   width: 64px
@@ -109,8 +109,9 @@
   align-items: center
   flex: 1
   min-height: 0
-  gap: tint.$size-16
-  padding: tint.$size-40 tint.$size-24 tint.$size-16
+  gap: var(--tint-size-16)
+  padding-block: var(--tint-size-40) var(--tint-size-16)
+  padding-inline: var(--tint-size-24)
   text-align: center
   overflow-y: auto
 

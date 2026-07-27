@@ -73,8 +73,8 @@
 <style lang="sass">
   .resize-handle
     position: fixed
-    bottom: 0
-    right: 0
+    inset-block-end: 0
+    inset-inline-end: 0
     width: 20px
     height: 20px
     cursor: nwse-resize

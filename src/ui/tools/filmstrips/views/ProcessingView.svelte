@@ -14,6 +14,6 @@
 .progress-section
   display: flex
   flex-direction: column
-  gap: tint.$size-8
-  padding: tint.$size-16
+  gap: var(--tint-size-8)
+  padding: var(--tint-size-16)
 </style>

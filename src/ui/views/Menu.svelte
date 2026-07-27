@@ -32,19 +32,19 @@
   flex-direction: column
   flex: 1
   min-height: 0
-  gap: tint.$size-16
-  padding: tint.$size-16
+  gap: var(--tint-size-16)
+  padding: var(--tint-size-16)
   overflow-y: auto
 
 .menu-header
   display: flex
   flex-direction: column
-  gap: tint.$size-2
+  gap: var(--tint-size-2)
   p
     color: var(--tint-text-secondary)
 
 .tool-grid
   display: grid
   grid-template-columns: repeat(2, 1fr)
-  gap: tint.$size-12
+  gap: var(--tint-size-12)
 </style>
