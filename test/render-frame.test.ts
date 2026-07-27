@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { renderFrame, type RenderOptions } from '../src/code/tools/filmstrips/render-frame'
 import { serialize } from '../src/code/tools/filmstrips/svg/serialize'
+import { readTracks } from '../src/code/tools/filmstrips/interpolate'
+import type { Animations } from '../src/code/tools/filmstrips/motion-types'
 import { parsePath } from '../src/code/tools/filmstrips/svg/path-data'
 import {
   identity,
@@ -37,6 +39,7 @@ function leaf(overrides: Partial<SceneNodeModel> = {}): SceneNodeModel {
     baseOpacity: 1,
     visible: true,
     isMask: false,
+    clipsContent: false,
     children: [],
     geometry: { fillSubpaths: SQUARE, centerlineSubpaths: [] },
     style: {
@@ -66,6 +69,7 @@ function container(
     baseOpacity: 1,
     visible: true,
     isMask: false,
+    clipsContent: false,
     children,
     hasTrim: false,
     ...overrides,
@@ -272,5 +276,102 @@ describe('masks', () => {
     const { nodes, defsNodes } = render(scene([mask]), 0, 0, OPTS)
     expect(nodes).toEqual([])
     expect(defsNodes).toEqual([])
+  })
+})
+
+describe('clipping frames', () => {
+  it('wraps content in a clip-path bounded by the frame rect', () => {
+    const frame = container([leaf()], {
+      type: 'FRAME',
+      clipsContent: true,
+      width: 20,
+      height: 20,
+    })
+    const { markup, defs } = render(scene([frame]), 0, 0, OPTS)
+    expect(markup).toContain('<g clip-path="url(#f0_0)">')
+    expect(defs).toContain('<clipPath id="f0_0">')
+    // The clip region is the frame's rect, not its content's geometry.
+    expect(defs).toContain('<rect')
+    expect(defs).toContain('width="20"')
+    expect(defs).toContain('height="20"')
+    // Content still renders inside the wrapper.
+    expect(markup).toContain('fill="#ff0000"')
+  })
+
+  it('bakes the frame world transform onto the clip rect (animation tracking)', () => {
+    const frame = container([leaf()], {
+      type: 'FRAME',
+      clipsContent: true,
+      restingMatrix: translate(5, 0),
+    })
+    const { defs } = render(scene([frame]), 0, 0, OPTS)
+    expect(defs).toContain('matrix(1 0 0 1 5 0)')
+  })
+
+  it('intersects nested clipping frames with separate clip-paths', () => {
+    const inner = container([leaf()], { type: 'FRAME', clipsContent: true })
+    const outer = container([inner], { type: 'FRAME', clipsContent: true })
+    const { markup, defs } = render(scene([outer]), 0, 0, OPTS)
+    // Inner is walked first, so it takes f0_0 and the outer wraps it as f0_1.
+    expect(defs).toContain('<clipPath id="f0_0">')
+    expect(defs).toContain('<clipPath id="f0_1">')
+    expect(markup).toContain(
+      '<g clip-path="url(#f0_1)"><g clip-path="url(#f0_0)">',
+    )
+  })
+
+  it('does not clip a non-clipping container', () => {
+    const { markup, defsNodes } = render(scene([container([leaf()])]), 0, 0, OPTS)
+    expect(markup).not.toContain('clip-path')
+    expect(defsNodes).toEqual([])
+  })
+
+  it('emits nothing for an empty clipping frame (no orphan def)', () => {
+    const frame = container([], { type: 'FRAME', clipsContent: true })
+    const { nodes, defsNodes } = render(scene([frame]), 0, 0, OPTS)
+    expect(nodes).toEqual([])
+    expect(defsNodes).toEqual([])
+  })
+})
+
+describe('animated opacity', () => {
+  // A fade-in layer: Figma reports its resting opacity as 0, while the OPACITY
+  // track drives the absolute value 0 -> 1.
+  const fadeIn: Animations = {
+    OPACITY: {
+      baseValue: { type: 'FLOAT', value: 0 },
+      timelineDuration: 1,
+      tracks: [
+        {
+          id: 't',
+          keyframeOperation: 'SET',
+          keyframes: [
+            { id: 'a', timelinePosition: 0, easing: { type: 'LINEAR' }, value: { type: 'FLOAT', value: 0 } },
+            { id: 'b', timelinePosition: 0.5, easing: { type: 'LINEAR' }, value: { type: 'FLOAT', value: 1 } },
+          ],
+        },
+      ],
+    },
+  }
+
+  it('reaches full opacity even when the layer rests at opacity 0', () => {
+    const fading = leaf({ baseOpacity: 0, tracks: readTracks(fadeIn) })
+    const { markup } = render(scene([fading]), 0.5, 0, OPTS)
+    expect(markup).toContain('fill="#ff0000"')
+    expect(markup).not.toContain('opacity="0"') // animated 1 wins over resting 0
+  })
+
+  it('samples the animated opacity mid-fade, ignoring the resting 0', () => {
+    const fading = leaf({ baseOpacity: 0, tracks: readTracks(fadeIn) })
+    const { markup } = render(scene([fading]), 0.25, 0, OPTS)
+    expect(markup).toContain('opacity="0.5"') // linear halfway, not 0
+  })
+
+  it('still composites ancestor opacity on top of an animated layer', () => {
+    const fading = leaf({ baseOpacity: 0, tracks: readTracks(fadeIn) })
+    const root = scene([])
+    root.root = container([fading], { baseOpacity: 0.5 })
+    const { markup } = render(root, 0.5, 0, OPTS)
+    expect(markup).toContain('opacity="0.5"') // 1 (animated) * 0.5 (parent)
   })
 })

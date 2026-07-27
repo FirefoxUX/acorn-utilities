@@ -76,6 +76,8 @@ export interface SceneNodeModel {
   visible: boolean
   /** True when this node masks its following siblings (Figma `isMask`). */
   isMask: boolean
+  /** True when this container clips its content to its bounds (Figma `clipsContent`). */
+  clipsContent: boolean
   children: SceneNodeModel[]
   geometry?: LeafGeometry
   style?: LeafStyle
@@ -241,6 +243,7 @@ function buildNode(node: SceneNode, parentAbs: Affine | null): SceneNodeModel {
     baseOpacity: 'opacity' in node ? node.opacity : 1,
     visible: node.visible !== false,
     isMask: 'isMask' in node && node.isMask === true,
+    clipsContent: 'clipsContent' in node && node.clipsContent === true,
     children: [],
     tracks,
     hasTrim,

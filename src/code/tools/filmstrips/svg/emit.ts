@@ -138,6 +138,15 @@ export function clipPathEl(id: string, paths: SvgChild[]): SvgElement {
   return el('clipPath', { id }, paths)
 }
 
+/** A `<rect>` for a `<clipPath>`, carrying its world transform. Clips a frame to its bounds. */
+export function clipRectEl(
+  transform: string,
+  w: number,
+  h: number,
+): SvgElement {
+  return el('rect', { transform, width: round(w), height: round(h) })
+}
+
 /**
  * An alpha `<mask>` over the full cell. The region is the whole cell rather than
  * the mask's tight bounding box so a mask that scales up under animation is

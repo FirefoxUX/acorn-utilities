@@ -29,6 +29,7 @@ import {
   linearGradientEl,
   radialGradientEl,
   clipPathEl,
+  clipRectEl,
   maskEl,
   maskWrapperEl,
 } from './svg/emit'
@@ -284,6 +285,22 @@ function buildMaskWrapper(
   return maskWrapperEl({ mask: `url(#${id})` }, inner)
 }
 
+// Wrap a clipping frame's content in a <g clip-path> bounded by the frame's
+// rect. The rect rides the frame's world transform (baked in frame space, like
+// buildMaskWrapper) so it tracks under animation. Nested clips intersect because
+// the inner wrapper is a descendant of the outer.
+function buildFrameClip(
+  node: SceneNodeModel,
+  world: Affine,
+  inner: SvgChild[],
+  ctx: RenderContext,
+): SvgElement {
+  const id = `f${ctx.frameIndex}_${ctx.seq++}`
+  const rect = clipRectEl(toSvgMatrix(world), node.width, node.height)
+  ctx.defs.push(clipPathEl(id, [rect]))
+  return maskWrapperEl({ 'clip-path': `url(#${id})` }, inner)
+}
+
 // Render a container's children, applying Figma mask semantics: a child marked
 // as a mask clips the siblings after it up to the next mask.
 function walkChildren(
@@ -335,15 +352,21 @@ function walk(
     ? composePose(node.restingMatrix, pose, node.width, node.height)
     : node.restingMatrix
   const world = multiply(parentWorld, local)
-  const opacity = parentOpacity * node.baseOpacity * (pose.opacity ?? 1)
+  // An animated OPACITY track is absolute, so it replaces the resting opacity
+  // rather than multiplying it; ancestor opacity still composites on top.
+  const ownOpacity = pose.opacity ?? node.baseOpacity
+  const opacity = parentOpacity * ownOpacity
 
   const markup: SvgChild[] = node.isLeaf
     ? renderLeaf(node, pose, ctx)
     : walkChildren(node.children, world, opacity, t, ctx)
   if (markup.length === 0) return []
 
-  // Leaves carry the composed transform; containers only pass it down.
-  return node.isLeaf ? groupNodes(toSvgMatrix(world), opacity, markup) : markup
+  // Leaves carry the composed transform; containers pass it down. A clipping
+  // frame additionally wraps its content in a clip-path.
+  if (node.isLeaf) return groupNodes(toSvgMatrix(world), opacity, markup)
+  if (node.clipsContent) return [buildFrameClip(node, world, markup, ctx)]
+  return markup
 }
 
 /** Inner SVG nodes + defs for the scene at time t seconds (frame `frameIndex`). */

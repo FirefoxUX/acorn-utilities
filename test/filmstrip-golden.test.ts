@@ -45,6 +45,7 @@ function leaf(overrides: Partial<SceneNodeModel> = {}): SceneNodeModel {
     baseOpacity: 1,
     visible: true,
     isMask: false,
+    clipsContent: false,
     children: [],
     geometry: { fillSubpaths: SQUARE, centerlineSubpaths: [] },
     style: {
@@ -74,6 +75,7 @@ function container(
     baseOpacity: 1,
     visible: true,
     isMask: false,
+    clipsContent: false,
     children,
     hasTrim: false,
     ...overrides,
@@ -171,6 +173,36 @@ describe('filmstrip golden output', () => {
 
   it('outlined stroke', () => {
     const svg = renderFilmstrip(scene([strokeLeaf()]), 1, 1, 20, 20, OUTLINE_OPTS)
+    expect(svg).toMatchSnapshot()
+  })
+
+  it('clipping frame', () => {
+    const inner = leaf({ restingMatrix: translate(15, 0) })
+    const frame = container([inner], {
+      type: 'FRAME',
+      clipsContent: true,
+      width: 20,
+      height: 20,
+    })
+    const svg = renderFilmstrip(scene([frame]), 1, 1, 20, 20, STROKE_OPTS)
+    expect(svg).toMatchSnapshot()
+  })
+
+  it('nested clipping frames', () => {
+    const inner = container([leaf({ restingMatrix: translate(6, 0) })], {
+      type: 'FRAME',
+      clipsContent: true,
+      restingMatrix: translate(4, 0),
+      width: 12,
+      height: 12,
+    })
+    const outer = container([inner], {
+      type: 'FRAME',
+      clipsContent: true,
+      width: 20,
+      height: 20,
+    })
+    const svg = renderFilmstrip(scene([outer]), 1, 1, 20, 20, STROKE_OPTS)
     expect(svg).toMatchSnapshot()
   })
 
