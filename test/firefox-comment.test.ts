@@ -6,16 +6,25 @@ function pause(id: string, atFrame: number, durationMs: number): PausePoint {
   return { id, atFrame, durationMs }
 }
 
+// The base cases exercise loop mode; one-shot has its own block below.
+const ffc = (
+  frameCount: number,
+  durationMs: number,
+  cellW: number,
+  cellH: number,
+  pauses: PausePoint[],
+) => computeFirefoxComment(frameCount, durationMs, cellW, cellH, pauses, true)
+
 describe('computeFirefoxComment', () => {
   it('is a valid SVG comment (no nested double-hyphen)', () => {
-    const c = computeFirefoxComment(26, 433, 20, 20, [])
+    const c = ffc(26, 433, 20, 20, [])
     expect(c.startsWith('<!--')).toBe(true)
     expect(c.trimEnd().endsWith('-->')).toBe(true)
     expect(c.slice(4, -3)).not.toContain('--')
   })
 
   it('emits a runnable CSS block with the sprite dimensions', () => {
-    const c = computeFirefoxComment(26, 433, 20, 16, [])
+    const c = ffc(26, 433, 20, 16, [])
     expect(c).toContain('overflow: hidden;')
     expect(c).toContain('@keyframes filmstrip {')
     expect(c).toContain('animation: filmstrip')
@@ -28,7 +37,7 @@ describe('computeFirefoxComment', () => {
 
   it('matches indicator.css step values for one 60fps pause', () => {
     const frameStepMs = 1000 / 60
-    const c = computeFirefoxComment(26, Math.round(26 * frameStepMs), 20, 20, [
+    const c = ffc(26, Math.round(26 * frameStepMs), 20, 20, [
       pause('a', 18, Math.round(100 * frameStepMs)),
     ])
     // the two play runs, exactly like indicator.css
@@ -42,7 +51,7 @@ describe('computeFirefoxComment', () => {
   })
 
   it('emits one steps() run per play segment', () => {
-    const c = computeFirefoxComment(30, 500, 16, 16, [
+    const c = ffc(30, 500, 16, 16, [
       pause('a', 10, 200),
       pause('b', 20, 200),
     ])
@@ -50,5 +59,17 @@ describe('computeFirefoxComment', () => {
     expect((c.match(/steps\(/g) ?? []).length).toBe(3)
     // two holds => two "hold frame" comments
     expect((c.match(/hold frame/g) ?? []).length).toBe(2)
+  })
+})
+
+describe('computeFirefoxComment one-shot (loop = false)', () => {
+  it('plays once and holds, on a strip one cell wider', () => {
+    const c = computeFirefoxComment(26, 433, 20, 16, [], false)
+    expect(c).toContain('animation: filmstrip')
+    expect(c).toContain('1 forwards')
+    expect(c).not.toContain('infinite')
+    expect(c).toContain('width: 540px;') // (26 + 1) frames * 20px
+    // rests on the real final cell (frame 26), not a blank wrap
+    expect(c).toContain('to { transform: translateX(calc(26 * -20px)); }')
   })
 })

@@ -32,5 +32,7 @@ export async function importStrip(
     durationMs: Math.round((frameCount / FILMSTRIP_FPS) * 1000),
     sourceName: source.name,
     pauses: readStoredPauses(source, frameCount),
+    // An imported strip is an already-baked, evenly-tiled loop.
+    loop: true,
   }
 }

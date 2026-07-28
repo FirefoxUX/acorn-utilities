@@ -8,7 +8,7 @@ import {
   getTimelines,
   type KeyframeBinding,
 } from './motion-types'
-import { readTracks } from './interpolate'
+import { readTracks, tracksReturnToStart } from './interpolate'
 import type { SelectionMotionInfo } from '@tools/filmstrips/types'
 
 function bindingDurationSec(b: KeyframeBinding): number {
@@ -92,14 +92,20 @@ export function inspectNode(node: SceneNode): SelectionMotionInfo {
       timelineDurationMs: 0,
       nestedKeyframesPresent: false,
       unsupportedNotes: [],
+      loops: true,
     }
   }
 
   const notes = new Set<string>()
+  // The strip can loop seamlessly only if every animated node returns to its
+  // starting state; read once here for both the caveats and the loop default.
+  let loops = true
   for (const n of animated) {
     const anims = getAnimations(n)
     if (!anims) continue
-    for (const note of readTracks(anims).unsupportedNotes) notes.add(note)
+    const tracks = readTracks(anims)
+    for (const note of tracks.unsupportedNotes) notes.add(note)
+    if (loops && !tracksReturnToStart(tracks)) loops = false
   }
 
   const subtree =
@@ -120,5 +126,6 @@ export function inspectNode(node: SceneNode): SelectionMotionInfo {
     timelineDurationMs: Math.round(durationSec * 1000),
     nestedKeyframesPresent: nested,
     unsupportedNotes: [...notes],
+    loops,
   }
 }

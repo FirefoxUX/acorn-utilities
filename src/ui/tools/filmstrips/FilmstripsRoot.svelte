@@ -22,10 +22,16 @@
   const view = $derived($filmstripsState.view)
   const info = $derived($filmstripsState.info)
 
+  // Writable derived: the loop toggle defaults to the detected value and resets
+  // when the selection changes (info recomputes), but a manual toggle overrides
+  // it until then. info is stable within one selection.
+  let loop = $derived(info?.loops ?? true)
+
   async function handleGenerate() {
     generating = true
     await errorStore.safeRequest('filmstrip:generate', {
       strokeOutput: outlineStrokes ? 'outline' : 'stroke',
+      loop,
     })
     generating = false
   }
@@ -69,6 +75,7 @@
         <ReadyView
           {info}
           bind:outlineStrokes
+          bind:loop
           {generating}
           onGenerate={handleGenerate}
         />

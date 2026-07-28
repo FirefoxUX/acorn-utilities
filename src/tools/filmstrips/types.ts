@@ -11,6 +11,8 @@ export const MAX_FILMSTRIP_FRAMES = 120
 export type FilmstripOptions = {
   /** How strokes are drawn: an SVG stroke, or a flattened filled outline. */
   strokeOutput: 'stroke' | 'outline'
+  /** Loop seamlessly, or play once and hold the final frame. */
+  loop: boolean
 }
 
 /**
@@ -47,6 +49,8 @@ export type SelectionMotionInfo = {
   nestedKeyframesPresent: boolean
   /** Human-readable caveats for the selection (springs approximated, etc.). */
   unsupportedNotes: string[]
+  /** Detected default for the loop toggle: true if the animation returns to its start. */
+  loops: boolean
 }
 
 /** The generated artifact + metadata, returned to the UI and stored in state. */
@@ -66,6 +70,8 @@ export type FilmstripResult = {
   cellH: number
   frameCount: number
   durationMs: number
+  /** Whether the strip loops seamlessly (else plays once and rests on the last frame). */
+  loop: boolean
   /** The layer name the strip was generated or imported from. */
   sourceName: string
   /** Pauses restored from the source frame (empty if none stored). */

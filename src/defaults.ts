@@ -32,6 +32,7 @@ export const DEFAULT_FILMSTRIPS_STATE: FilmstripsState = {
   info: null,
   options: {
     strokeOutput: 'stroke',
+    loop: true,
   },
   progress: 0,
   currentFrame: 0,

@@ -13,11 +13,13 @@
   let {
     info,
     outlineStrokes = $bindable(),
+    loop = $bindable(),
     generating,
     onGenerate,
   }: {
     info: SelectionMotionInfo
     outlineStrokes: boolean
+    loop: boolean
     generating: boolean
     onGenerate: () => void
   } = $props()
@@ -41,11 +43,20 @@
   </div>
 
   <LabeledToggleable
+    id="filmstrip-loop"
+    type="checkbox"
+    checked={loop}
+    label="Loop animation"
+    description="Looping animations play seamlessly and don't generate a final frame at the end."
+    onchange={({ checked }: { checked: boolean }) => (loop = checked)}
+  />
+
+  <LabeledToggleable
     id="filmstrip-outline"
     type="checkbox"
     checked={outlineStrokes}
     label="Outline strokes to filled paths"
-    description="Off keeps SVG strokes. On flattens strokes into filled outlines. If results look off without, try turning this on."
+    description="Flattens strokes into filled outlines instead of SVG strokes. Try it if the results look off without it."
     onchange={({ checked }: { checked: boolean }) => (outlineStrokes = checked)}
   />
 

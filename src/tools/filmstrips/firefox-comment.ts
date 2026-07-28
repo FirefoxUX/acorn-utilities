@@ -24,8 +24,9 @@ export function computeFirefoxComment(
   cellW: number,
   cellH: number,
   pauses: readonly PausePoint[],
+  loop: boolean,
 ): string {
-  const { segments } = buildSchedule(frameCount, durationMs, pauses)
+  const { segments } = buildSchedule(frameCount, durationMs, pauses, loop)
   const frameStepMs = frameCount > 0 ? durationMs / frameCount : 0
   const pauseStepsFor = (ms: number) =>
     Math.max(1, Math.round(ms / frameStepMs))
@@ -36,7 +37,8 @@ export function computeFirefoxComment(
   )
   const animSteps = frameCount + totalPauseSteps
   const animDurationMs = Math.round(animSteps * frameStepMs)
-  const stripW = frameCount * cellW
+  // A one-shot strip carries one extra resting cell (see renderFilmstrip).
+  const stripW = (loop ? frameCount : frameCount + 1) * cellW
 
   // One keyframe per segment boundary, plus an explicit final frame so the
   // block works standalone (no reliance on a resting transform). The timing
@@ -67,8 +69,9 @@ export function computeFirefoxComment(
 
   const lines: string[] = [
     `This SVG is a ${frameCount}-frame filmstrip (${cellW}x${cellH}px per frame).`,
-    'The CSS below plays it: an outer element clips to one frame while an inner',
-    'element slides the strip. Adjust the selectors and the url.',
+    `The CSS below plays it ${loop ? 'on a loop' : 'once and holds the final frame'}. An`,
+    'outer element clips to one frame while an inner element slides the strip.',
+    'Adjust the selectors and the url.',
     '',
     '.filmstrip {',
     `  width: ${cellW}px;`,
@@ -79,7 +82,7 @@ export function computeFirefoxComment(
     `  width: ${stripW}px;  /* ${frameCount} frames */`,
     `  height: ${cellH}px;`,
     '  background: url("filmstrip.svg") no-repeat;',
-    `  animation: filmstrip ${animDurationMs}ms infinite;`,
+    `  animation: filmstrip ${animDurationMs}ms ${loop ? 'infinite' : '1 forwards'};`,
     '}',
     '@keyframes filmstrip {',
     ...keyframes,

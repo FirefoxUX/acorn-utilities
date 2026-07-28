@@ -8,6 +8,8 @@
 import { describe, it, expect } from 'vitest'
 import { renderFilmstrip } from '../src/code/tools/filmstrips/render-filmstrip'
 import type { RenderOptions } from '../src/code/tools/filmstrips/render-frame'
+import { readTracks } from '../src/code/tools/filmstrips/interpolate'
+import type { Animations } from '../src/code/tools/filmstrips/motion-types'
 import { parsePath } from '../src/code/tools/filmstrips/svg/path-data'
 import {
   identity,
@@ -131,30 +133,30 @@ function gradientLeaf(gradientType: 'linear' | 'radial'): SceneNodeModel {
 
 describe('filmstrip golden output', () => {
   it('solid fill, single frame', () => {
-    const svg = renderFilmstrip(scene([leaf()]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([leaf()]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
   it('translucent fill across three frames (tiling + per-frame def ids)', () => {
     const s = scene([leaf({ style: { ...leaf().style!, fills: [solid(1, 0, 0, 0.5)] } })])
-    const svg = renderFilmstrip(s, 1, 3, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(s, 1, 3, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
   it('linear gradient fill', () => {
-    const svg = renderFilmstrip(scene([gradientLeaf('linear')]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([gradientLeaf('linear')]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
   it('radial gradient fill', () => {
-    const svg = renderFilmstrip(scene([gradientLeaf('radial')]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([gradientLeaf('radial')]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
   it('solid-opaque clip mask', () => {
     const mask = leaf({ isMask: true, style: { ...leaf().style!, fills: [solid(0, 0, 0)] } })
     const content = leaf({ style: { ...leaf().style!, fills: [solid(0, 0, 1)] } })
-    const svg = renderFilmstrip(scene([mask, content]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([mask, content]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
@@ -162,17 +164,17 @@ describe('filmstrip golden output', () => {
     const inner = leaf({ style: { ...leaf().style!, fills: [solid(1, 1, 1)] } })
     const softMask = container([inner], { isMask: true })
     const content = leaf({ style: { ...leaf().style!, fills: [solid(0, 0, 1)] } })
-    const svg = renderFilmstrip(scene([softMask, content]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([softMask, content]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
   it('plain stroke', () => {
-    const svg = renderFilmstrip(scene([strokeLeaf()]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([strokeLeaf()]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
   it('outlined stroke', () => {
-    const svg = renderFilmstrip(scene([strokeLeaf()]), 1, 1, 20, 20, OUTLINE_OPTS)
+    const svg = renderFilmstrip(scene([strokeLeaf()]), 1, 1, 20, 20, OUTLINE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
@@ -184,7 +186,7 @@ describe('filmstrip golden output', () => {
       width: 20,
       height: 20,
     })
-    const svg = renderFilmstrip(scene([frame]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([frame]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
@@ -202,7 +204,7 @@ describe('filmstrip golden output', () => {
       width: 20,
       height: 20,
     })
-    const svg = renderFilmstrip(scene([outer]), 1, 1, 20, 20, STROKE_OPTS)
+    const svg = renderFilmstrip(scene([outer]), 1, 1, 20, 20, STROKE_OPTS, true)
     expect(svg).toMatchSnapshot()
   })
 
@@ -215,7 +217,32 @@ describe('filmstrip golden output', () => {
       20,
       20,
       STROKE_OPTS,
+      true,
     )
+    expect(svg).toMatchSnapshot()
+  })
+
+  it('one-shot appends a resting cell at t=duration', () => {
+    // A fade-in that rests at opacity 0: with loop=false the strip has N+1 cells
+    // (frames 0..N-1 plus the true final state at t=duration) and width (N+1)·cellW.
+    const fadeIn: Animations = {
+      OPACITY: {
+        baseValue: { type: 'FLOAT', value: 0 },
+        timelineDuration: 1,
+        tracks: [
+          {
+            id: 't',
+            keyframeOperation: 'SET',
+            keyframes: [
+              { id: 'a', timelinePosition: 0, easing: { type: 'LINEAR' }, value: { type: 'FLOAT', value: 0 } },
+              { id: 'b', timelinePosition: 1, easing: { type: 'LINEAR' }, value: { type: 'FLOAT', value: 1 } },
+            ],
+          },
+        ],
+      },
+    }
+    const fading = leaf({ baseOpacity: 0, tracks: readTracks(fadeIn) })
+    const svg = renderFilmstrip(scene([fading]), 1, 2, 20, 20, STROKE_OPTS, false)
     expect(svg).toMatchSnapshot()
   })
 })

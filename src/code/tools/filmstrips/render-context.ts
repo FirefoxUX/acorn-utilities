@@ -16,5 +16,6 @@ export function renderWithColorMapping(
     cached.cellW,
     cached.cellH,
     { strokeOutput: cached.strokeOutput, colorMapping: mapping },
+    cached.loop,
   )
 }

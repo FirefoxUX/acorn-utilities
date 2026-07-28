@@ -56,6 +56,7 @@ export function buildSchedule(
   frameCount: number,
   durationMs: number,
   pauses: readonly PausePoint[],
+  loop: boolean,
 ): Schedule {
   if (frameCount <= 1) {
     return { segments: [], totalDurationMs: durationMs }
@@ -126,11 +127,14 @@ export function buildSchedule(
     })
   }
 
-  // Final play segment to the wrap position, unless a pause already sits on the
-  // last frame (in which case the loop wraps straight from that hold to frame 0).
+  // Final play segment to frame `frameCount`. For a loop that's the wrap
+  // position (suppressed when a pause already sits on the last frame, so the
+  // loop wraps straight from that hold to frame 0). For a one-shot it's the
+  // resting cell, so always emit it, even after a pause on the last frame:
+  // playback advances from the hold to the final frame rather than wrapping.
   const lastHoldAtEnd =
     holds.length > 0 && holds[holds.length - 1].atFrame === frameCount - 1
-  if (!lastHoldAtEnd) {
+  if (!lastHoldAtEnd || !loop) {
     const steps = frameCount - cursorFrame
     const startMs = elapsedMs
     elapsedMs += steps * frameStepMs

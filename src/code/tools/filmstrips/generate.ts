@@ -24,6 +24,7 @@ export interface FilmstripData {
   durationMs: number
   sourceName: string
   pauses: StoredPause[]
+  loop: boolean
 }
 
 /** Enough to re-render the same strip with a different color mapping. */
@@ -34,6 +35,7 @@ export interface CachedScene {
   cellW: number
   cellH: number
   strokeOutput: 'stroke' | 'outline'
+  loop: boolean
 }
 
 type ProgressCallback = (current: number, total: number) => void
@@ -70,14 +72,18 @@ export async function generateFilmstrip(
     cellW,
     cellH,
     { strokeOutput: options.strokeOutput, colorMapping: null },
+    options.loop,
     onProgress,
   )
+
+  // A one-shot strip carries one extra resting cell (see renderFilmstrip).
+  const cellCount = options.loop ? frameCount : frameCount + 1
 
   return {
     data: {
       svg,
       colors: collectColors(scene),
-      width: cellW * frameCount,
+      width: cellW * cellCount,
       height: cellH,
       cellW,
       cellH,
@@ -85,6 +91,7 @@ export async function generateFilmstrip(
       durationMs: Math.round(durationSec * 1000),
       sourceName: source.name,
       pauses: readStoredPauses(source, frameCount),
+      loop: options.loop,
     },
     cached: {
       scene,
@@ -93,6 +100,7 @@ export async function generateFilmstrip(
       cellW,
       cellH,
       strokeOutput: options.strokeOutput,
+      loop: options.loop,
     },
   }
 }

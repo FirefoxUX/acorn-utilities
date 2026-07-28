@@ -42,7 +42,9 @@
   )
 
   let playing = $state(true)
-  let repeat = $state(true)
+  // Preview repeat defaults to the strip's mode (loop repeats; one-shot plays
+  // once and holds), and stays a user-overridable toggle via the writable derived.
+  let repeat = $derived(result?.loop ?? true)
 
   // Preview-only 1s holds on the first and last frame. Kept out of the scrubber
   // schedule entirely: the animation just parks at the start/end for PAD_MS in
@@ -92,7 +94,9 @@
   let pauseSeq = 0 // local id source; Figma's iframe may lack crypto.randomUUID
 
   const schedule = $derived(
-    result ? buildSchedule(result.frameCount, result.durationMs, pauses) : null,
+    result
+      ? buildSchedule(result.frameCount, result.durationMs, pauses, result.loop)
+      : null,
   )
   const totalDurationMs = $derived(schedule?.totalDurationMs ?? 0)
   const padMs = $derived(padEnds ? PAD_MS : 0)
@@ -218,16 +222,20 @@
         })
       }
     }
-    // Terminal keyframe holds the last real frame to the loop edge, then wraps
-    // to frame 0. Never emit -frameCount*cellW (past the atlas = blank).
+    // Terminal keyframe. A loop holds the last real frame (frameCount - 1) then
+    // wraps to 0, never -frameCount*cellW, which is past a loop atlas (blank).
+    // A one-shot atlas has an extra resting cell there, so it rests on frameCount.
+    const lastFrame = r.loop ? r.frameCount - 1 : r.frameCount
     keyframes.push({
-      transform: `translateX(${-(r.frameCount - 1) * cellW}px)`,
+      transform: `translateX(${-lastFrame * cellW}px)`,
       offset: 1,
     })
 
     const anim = el.animate(keyframes, {
       duration: total,
       iterations: repeat ? Infinity : 1,
+      // A one-shot holds its final frame when it isn't repeating.
+      fill: r.loop ? 'none' : 'forwards',
     })
     anim.currentTime = pad + untrack(() => progress) * base
     anim.playbackRate = untrack(() => playbackRate)
@@ -520,6 +528,7 @@
           result.cellW,
           result.cellH,
           pauses,
+          result.loop,
         ) +
         '\n' +
         svg

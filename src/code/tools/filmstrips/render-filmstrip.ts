@@ -13,7 +13,8 @@ export type FrameProgress = (current: number, total: number) => void
 
 /**
  * Build the full filmstrip SVG. Frame i samples t = (i / frameCount) *
- * durationSec, matching the CSS steps(N, start) loop the tool emits.
+ * durationSec. A looping strip has `frameCount` cells; a one-shot strip appends
+ * one more cell for the resting state at t = duration (see below).
  */
 export function renderFilmstrip(
   scene: SceneModel,
@@ -22,6 +23,7 @@ export function renderFilmstrip(
   cellW: number,
   cellH: number,
   options: RenderOptions,
+  loop: boolean,
   onProgress?: FrameProgress,
 ): string {
   const cells: SvgChild[] = []
@@ -32,5 +34,15 @@ export function renderFilmstrip(
     cells.push(nestedSvg(i * cellW, 0, cellW, cellH, body))
     onProgress?.(i + 1, frameCount)
   }
-  return serialize(svgRoot(cellW * frameCount, cellH, cells))
+  // One-shot: append the resting frame, the true final state at t = duration
+  // (which the [0, duration) loop above never samples), as cell `frameCount`, so
+  // the driver can play once and hold it. (frameIndex = frameCount keeps its def
+  // ids document-unique.)
+  if (!loop) {
+    const { nodes, defs } = renderFrame(scene, durationSec, frameCount, options)
+    const body = defs.length ? [el('defs', {}, defs), ...nodes] : nodes
+    cells.push(nestedSvg(frameCount * cellW, 0, cellW, cellH, body))
+  }
+  const cellCount = loop ? frameCount : frameCount + 1
+  return serialize(svgRoot(cellCount * cellW, cellH, cells))
 }

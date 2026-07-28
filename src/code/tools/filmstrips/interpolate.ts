@@ -324,3 +324,58 @@ export function buildPoses(
   }
   return poses
 }
+
+// ---------------------------------------------------------------------------
+// Loop detection
+// ---------------------------------------------------------------------------
+
+// A filmstrip loops seamlessly only if its last rendered frame equals its first.
+// Rendering is a pure function of pose + static geometry, so that reduces to
+// "every animated track ends where it began", checked here on the tracks alone,
+// with no scene build or render.
+const EPS_NUM = 1e-4
+const EPS_ANGLE = 1e-3 // degrees
+const EPS_COLOR = 1 / 255 // channels are quantized on export
+
+// Endpoints are the clamped values sampleScalar returns at t=0 / t=duration, i.e.
+// the first and last keyframe values. Rotation and trim offset are periodic, so
+// compare their shortest wrap distance (a 0->360 spin returns to its start).
+function returnsToStart(field: NumericField, a: number, b: number): boolean {
+  if (field === 'rotation') {
+    const d = Math.abs(a - b) % 360
+    return (d > 180 ? 360 - d : d) < EPS_ANGLE
+  }
+  if (field === 'trimOffset') {
+    const d = Math.abs(a - b) % 1
+    return (d > 0.5 ? 1 - d : d) < EPS_NUM
+  }
+  return Math.abs(a - b) < EPS_NUM
+}
+
+function colorsEqual(a: RGBA, b: RGBA): boolean {
+  return (
+    Math.abs(a.r - b.r) < EPS_COLOR &&
+    Math.abs(a.g - b.g) < EPS_COLOR &&
+    Math.abs(a.b - b.b) < EPS_COLOR &&
+    Math.abs(a.a - b.a) < EPS_COLOR
+  )
+}
+
+/**
+ * Whether a node's animation returns to its starting visual state: the signal
+ * for whether a filmstrip of it can loop seamlessly (vs. play once). A single
+ * (constant) keyframe trivially returns.
+ */
+export function tracksReturnToStart(tracks: NodeTracks): boolean {
+  for (const [field, keys] of Object.entries(tracks.numeric)) {
+    if (!keys || keys.length === 0) continue
+    const first = keys[0].value
+    const last = keys[keys.length - 1].value
+    if (!returnsToStart(field as NumericField, first, last)) return false
+  }
+  for (const keys of [...tracks.fills.values(), ...tracks.strokes.values()]) {
+    if (keys.length === 0) continue
+    if (!colorsEqual(keys[0].value, keys[keys.length - 1].value)) return false
+  }
+  return true
+}
