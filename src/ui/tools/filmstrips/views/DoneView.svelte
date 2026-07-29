@@ -27,7 +27,7 @@
     buildSchedule,
     type PausePoint,
   } from '@tools/filmstrips/pause-schedule'
-  import { computeFirefoxComment } from '@tools/filmstrips/firefox-comment'
+  import { computeFirefoxMetadata } from '@tools/filmstrips/firefox-comment'
   import type { ColorRole } from '@tools/filmstrips/types'
 
   const clamp = (v: number, min: number, max: number) =>
@@ -518,20 +518,19 @@
     svg = optimizeSvg(svg)
     svg = formatSvg(svg)
 
-    // The Firefox format prepends the timing comment (pauses + keyframe
-    // schedule) whether or not there were colors to remap.
+    // The Firefox format embeds a <metadata> block (the runnable CSS: pauses +
+    // keyframe schedule) whether or not there were colors to remap. It must live
+    // inside the root <svg>, so inject it as the first child rather than prepend.
     if (downloadFormat === 'firefox') {
-      svg =
-        computeFirefoxComment(
-          result.frameCount,
-          result.durationMs,
-          result.cellW,
-          result.cellH,
-          pauses,
-          result.loop,
-        ) +
-        '\n' +
-        svg
+      const metadata = computeFirefoxMetadata(
+        result.frameCount,
+        result.durationMs,
+        result.cellW,
+        result.cellH,
+        pauses,
+        result.loop,
+      )
+      svg = svg.replace(/(<svg[^>]*>)/, (open) => `${open}\n${metadata}`)
     }
     handleDownload(svg)
   }
